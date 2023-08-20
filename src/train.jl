@@ -1,15 +1,19 @@
 
 
-function train(x::Array, 
-    y::Array, 
-    model::Function, 
-    optimiser::Function, 
-    lossF::Function,
-    batchSize::Int,
-    epochs::Int)
+function train(
+    x, 
+    y, 
+    model, 
+    #optimiser::Function, 
+    lossF,
+    #batchSize::Int,
+    epochs,
+    stepSize)
+    iterations = size(x)[1]
     for _ in 1:epochs
         for i in 1:iterations
-        y = model, x
-        cost = lossF, yTruthB
-
+            println(lossF(model(x[i, :]), y[i, :]))
+            model = descent(x[i, :], y[i, :], lossF, model, stepSize)
+        end
+    end
 end
