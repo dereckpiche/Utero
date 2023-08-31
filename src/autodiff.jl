@@ -1,23 +1,23 @@
 import Base.+
-
-
-
 abstract type Mutator end
 
-#function gradient(f::mutator ∘ g::mutator, x) 
-#    gradient(f, g(x)) 
-#end
 
 """ 
-Get an Id dict for every tensor in m.
-Every tensor is a unique object. We 
-assign a second tensor to every param tensor in the dict.
-That way, we obtain a different.
+Every tensor is a parameter. 
+We can reduce our model into atomic operations of the form
+x::Vector -> f(T) -> y::Vector
+for every element of the tensor T, we can create a jacobian matrix
+where J[i, j] is d y_i / d f(E, y_i).
+
+
+
+Jacobian is 
+J[i,j] = dv_i / dy_i ??? <- verify
 """
 function GetJacoDict(m::Mutator)
     dict = IdDict()
     for p in propertynames(m) 
-        push!(dict, getfield(m, p)=>2)
+        push!(dict, getfield(m, p)=>nothing)
     end
     return dict
 end
@@ -26,18 +26,49 @@ function GetJacoDict(d::IdDict, m::Mutator)
     return merge(d, GetJacoDictI(m))
 end
 
-""" 
-Backprop
+
 """
+Computes the values at every layer and 
+creates a computationnal graph description in a dictionnary
+which will allow us to go backwards.
+""" 
+function Forward(m::Function, x)
+    CompGraph = IdDict()
+    Jacobians = IdDict()
 
-function Backprop(f, outs, x)
-    if typeof(f) == (g::Mutator ∘ h::Mutator)(x)
-        f = backprop(h)
+    x -> Dual # x becomes a Dual
+    # everything it touches becomes a Dual
+    # thus, operations will come in op(Dual, Tensor)
+    # in this comb, we compute the and 
 
+    function +(x::Dual, t::Array)
+        # Add x => t to CompGraph
+        # 
+    end
 
+    function *(x::Dual, t::Array)
+        
     end
 
 
+    y = m(x)
+
+    # based on the "y" object id, we can go backwards in the computationnal graph
+    # and compute the gradients
+
+    return y, CompGraph, Jacobians
+    
+end
+
+
+"""
+Backprop. Compute the gradients by going backwards using
+the comp graph computed by 'Forward'. Backprop will skip 
+computing the gradients for excluded methods!
+"""
+
+function Backprop(m, y, CompGraph, Jacobians)
+    return
 end
 
 function Jacobian(cost::Mutator, x::AbstractArray)
