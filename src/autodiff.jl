@@ -66,9 +66,18 @@ end
 function jacobian(x, y)
     x = 3
     f(y) = x
-    g::Dual + f::Dual = (g[1]+f[1], g[2]+f[2])  
-    g::Dual * f::Dual = (g[1]*f[1], f[1]*g[2] + f[2]*g[1])
-    (g::Mutator)(f::Dual) = (g(f[1])[1], g(f(1))[2]*f[2]) # something like that
+    #g::Dual + f::Dual = (g[1]+f[1], g[2]+f[2])  
+    #g::Dual * f::Dual = (g[1]*f[1], f[1]*g[2] + f[2]*g[1])
+    #(g::Mutator)(f::Dual) = (g(f[1])[1], g(f(1))[2]*f[2]) # something like that
+    g = 2
+    function draft(x)
+        return x + g
+    end
+
+    function (g::Mutator)(f::Dual)
+        
+    end
+    println(draft(3))
 end
 
 jacobian(4, 4)
