@@ -2,10 +2,10 @@
 Loss functions.
 """
 
+""" 
+Mean error squared 
+"""
 function mse(v1::Vector, v2::Vector)
-    """
-    Mean error squared.
-    """
     mse = 0
     l = length(v1)
     for i in 1:l
@@ -14,10 +14,11 @@ function mse(v1::Vector, v2::Vector)
     return mse / l
 end
 
+""" 
+Mean absolute error
+"""
+
 function mae(v1::Vector, v2::Vector)
-    """
-    Mean absolute error.
-    """
     mae = 0
     l = length(v1)
     for i in 1:l

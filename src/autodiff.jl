@@ -1,5 +1,54 @@
 import Base.+
 
+
+
+abstract type Mutator end
+
+#function gradient(f::mutator ∘ g::mutator, x) 
+#    gradient(f, g(x)) 
+#end
+
+""" 
+Get an Id dict for every tensor in m.
+Every tensor is a unique object. We 
+assign a second tensor to every param tensor in the dict.
+That way, we obtain a different.
+"""
+function GetJacoDict(m::Mutator)
+    dict = IdDict()
+    for p in propertynames(m) 
+        push!(dict, getfield(m, p)=>2)
+    end
+    return dict
+end
+
+function GetJacoDict(d::IdDict, m::Mutator)
+    return merge(d, GetJacoDictI(m))
+end
+
+""" 
+Backprop
+"""
+
+function Backprop(f, outs, x)
+    if typeof(f) == (g::Mutator ∘ h::Mutator)(x)
+        f = backprop(h)
+
+
+    end
+
+
+end
+
+function Jacobian(cost::Mutator, x::AbstractArray)
+    jaco = 2 # params dict
+    #g::Dual + f::Dual = (g[1]+f[1], g[2]+f[2])  
+    #g::Dual * f::Dual = (g[1]*f[1], f[1]*g[2] + f[2]*g[1])
+    #(g::Mutator)(f::Dual) = (g(f[1])[1], g(f(1))[2]*f[2]) # something like that
+end
+
+
+
 """
 Here is how to proceed
 We create a new type, Param. 
@@ -59,26 +108,3 @@ rules = quote
 
 end
 """
-
-#function gradient(f::mutator ∘ g::mutator, x) 
-#    gradient(f, g(x)) 
-#end
-function jacobian(x, y)
-    x = 3
-    f(y) = x
-    #g::Dual + f::Dual = (g[1]+f[1], g[2]+f[2])  
-    #g::Dual * f::Dual = (g[1]*f[1], f[1]*g[2] + f[2]*g[1])
-    #(g::Mutator)(f::Dual) = (g(f[1])[1], g(f(1))[2]*f[2]) # something like that
-    g = 2
-    function draft(x)
-        return x + g
-    end
-
-    function (g::Mutator)(f::Dual)
-        
-    end
-    println(draft(3))
-end
-
-jacobian(4, 4)
-

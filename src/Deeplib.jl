@@ -6,9 +6,10 @@ using Random
 
 
 # Internal
-include("dense.jl")
-include("activations.jl")
-include("train.jl")
-include("optimizers.jl")
-include("loss.jl")
+include("AutoDiff.jl")
+include("Dense.jl")
+include("Activations.jl")
+include("Train.jl")
+include("Optimizers.jl")
+include("Loss.jl")
 end
