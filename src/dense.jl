@@ -19,7 +19,7 @@ function Dense(InDim::Int, OutDim::Int, f::Function)
 end
 
 function (d::Dense)(v::AbstractArray{<:Real, 1})
-    return d.f( *(d.w, v) + d.b )
+    return d.f( +(*(d.w, v), d.b) )
 end
 
 function (d::Dense)(x::Array{<:Real, 2})
