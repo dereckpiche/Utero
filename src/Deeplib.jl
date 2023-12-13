@@ -1,7 +1,6 @@
-module Deeplib
+module Utero
 
 # External
-using Zygote # automatic differentiation
 using Random
 
 
