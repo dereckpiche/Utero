@@ -18,12 +18,12 @@ function Dense(InDim::Int, OutDim::Int, f::Function)
     return Dense(w, b, f)
 end
 
-function (d::Dense)(v::AbstractArray{<:Real, 1})
-    return d.f( +(*(d.w, v), d.b) )
+function (d::Dense)(v::AbstractArray{<:Real,1})
+    return d.f(+(*(d.w, v), d.b))
 end
 
-function (d::Dense)(x::Array{<:Real, 2})
-    y = Array{Number, 2}(undef, size(x)[1], size(d.w)[1])
+function (d::Dense)(x::Array{<:Real,2})
+    y = Array{Number,2}(undef, size(x)[1], size(d.w)[1])
     for (RowInd, v) in enumerate(eachrow(x))
         y[RowInd, :] = d(v)
     end
