@@ -9,7 +9,7 @@ function DescentStep(x, y, lossF, model, stepSize)
         param = getproperty(model, key)
         if (grad[key] != nothing)
             delta = grad[key] * -stepSize
-            setproperty!(model, key, param+delta)
+            setproperty!(model, key, param + delta)
         end
     end
     return model
