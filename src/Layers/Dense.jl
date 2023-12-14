@@ -1,11 +1,7 @@
 
+@doc """
+Dense layers consist of a linear mapping followed by a non linear element-wise activation function.
 """
-Most common layer in a neural network. 
-The Dense layer is defined for vector and matrix input.
-For matrix input, Dense is applied row-wise.
-
-"""
-
 struct Dense <: Mutator
     w::Matrix
     b::Vector

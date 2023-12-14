@@ -1,9 +1,9 @@
 
 
 function train(
-    x, 
-    y, 
-    model, 
+    x,
+    y,
+    model,
     #optimiser::Function, 
     lossF,
     #batchSize::Int,
