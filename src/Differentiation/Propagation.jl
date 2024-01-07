@@ -64,25 +64,30 @@ end
 
 
 
-function BackProp(y, Nodes, Edges, Jacobians)::IdDict
+function BackProp(y, Nodes, Edges, Jacobians, w)::IdDict
     TopoSortNodes = KahnTopoSort(Nodes, Edges)
     ChainedJacobians = IdDict{Any,Float64}(y.Node => 1)
     for source in reverse(TopoSortNodes[1:end-1])
         CJ = 0
         sinks = get(Edges, source, false)
         for sink in sinks
-            CJ += get(Jacobians, (source, sink), false) * get(ChainedJacobians, sink, false)
+            CJ += get(
+                Jacobians, (source, sink), false) * get(
+                    ChainedJacobians, sink, false)
         end
         merge!(ChainedJacobians, IdDict(source => CJ))
     end
-    Gradients = IdDict([source => get(ChainedJacobians, source, false) for source in keys(ChainedJacobians) if source in w])
+    Gradients = IdDict(
+        [source => get(
+            ChainedJacobians, source, false) 
+            for source in keys(ChainedJacobians) if source in w])
     return Gradients
 end
 
 
 function GetGradient(f, x, w)::IdDict
     y, Nodes, Edges, Jacobians = ForwProp(f, x, w)
-    return BackProp(y, Nodes, Edges, Jacobians)
+    return BackProp(y, Nodes, Edges, Jacobians, w)
 end
 
 

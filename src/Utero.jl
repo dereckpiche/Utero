@@ -2,18 +2,14 @@ module Utero
 
 # External
 using Random
+using LinearAlgebra
 
 
 # Internal
 
-include(""
-
-include("AutoDiff.jl")
-include("Dense.jl")
-include("Activations.jl")
-include("Train.jl")
-include("Optimizers.jl")
-include("Loss.jl")
-
+include("Differentiation/DirectedAcyclicGraph.jl")
+include("Differentiation/Tracking.jl")
+include("Differentiation/Jacobians.jl")
+include("Differentiation/Propagation.jl")
 
 end

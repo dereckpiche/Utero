@@ -1,5 +1,3 @@
-
-
 function train(
     x,
     y,

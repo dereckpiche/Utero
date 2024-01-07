@@ -1,4 +1,3 @@
-
 function AddEdge(Edges, source, sink)
     if source in keys(Edges) merge!(Edges, IdDict(source=>Set([sink, get(Edges, source, false)...])))
     else merge!(Edges, IdDict(source=>Set([sink]))) end 
