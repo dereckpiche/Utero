@@ -56,6 +56,11 @@ GetJacobian(f::typeof(.-), a::Tracked, b::Array) = Diagonal(ones(prod(size(a))))
 
 
 function GetJacobian(f::typeof(*), w::Tracked, x::Array)
-    J = Diagonal( reshape(x, prod(size(x))))
+    J = Diagonal( reshape(x, prod(size(x)) ))
+    return J
+end
+
+function GetJacobian(f::typeof(*), x::Array, w::Tracked)
+    J = Transpose(Diagonal( reshape(x, prod(size(x)) )))
     return J
 end

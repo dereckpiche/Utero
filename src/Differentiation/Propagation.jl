@@ -11,7 +11,7 @@ function ForwProp(f, x, w::Set)
     global Jacobians = IdDict()
 
     for op in (Symbol(+), Symbol(-), Symbol(*), Symbol(/), Symbol(^))
-        for t in (Symbol(Integer), Symbol(AbstractFloat))
+        for t in (Symbol(Integer), Symbol(AbstractFloat), Symbol(Array))
 
             eval(:(global function ($op)(a::T, b::Tracked) where {T<:($t)}
                 Node = GenNode(Nodes)
@@ -66,14 +66,16 @@ end
 
 function BackProp(y, Nodes, Edges, Jacobians, w)::IdDict
     TopoSortNodes = KahnTopoSort(Nodes, Edges)
-    ChainedJacobians = IdDict{Any,Float64}(y.Node => 1)
+    ChainedJacobians = IdDict{Any,Any}(y.Node => 1)
     for source in reverse(TopoSortNodes[1:end-1])
-        CJ = 0
+        CJ = false
         sinks = get(Edges, source, false)
         for sink in sinks
-            CJ += get(
+            J = get(
                 Jacobians, (source, sink), false) * get(
                     ChainedJacobians, sink, false)
+            if (CJ == false) CJ = J
+            else CJ += J end
         end
         merge!(ChainedJacobians, IdDict(source => CJ))
     end
