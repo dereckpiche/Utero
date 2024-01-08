@@ -1,5 +1,25 @@
 
-CustFuncts = [] # contains the functions with custom jacobians
+TwoTensorOperations = (
+    Symbol(+), 
+    Symbol(-), 
+    Symbol(*), 
+    Symbol(/), 
+    Symbol(^)
+)
+
+SingleTensorOperations = (
+    Symbol(map),
+    Symbol(prod),
+    Symbol(sum),
+    Symbol(cos), 
+    Symbol(sin)
+)
+
+function AddJacobian(Jacobians, source, sink, Jacobian)
+    # adds jacobian of sink with respect to source to jacobians
+    merge!(Jacobians, IdDict((source, sink) => Jacobian)) 
+end
+
 
 function ForwProp(f, x, w::Set)
 
@@ -10,7 +30,7 @@ function ForwProp(f, x, w::Set)
     global Edges = IdDict()
     global Jacobians = IdDict()
 
-    for op in (Symbol(+), Symbol(-), Symbol(*), Symbol(/), Symbol(^))
+    for op in TwoTensorOperations
         for t in (Symbol(Integer), Symbol(AbstractFloat), Symbol(Array))
 
             eval(:(global function ($op)(a::T, b::Tracked) where {T<:($t)}
@@ -39,12 +59,11 @@ function ForwProp(f, x, w::Set)
                 AddJacobian(Jacobians, b.Node, Node, Jb)
                 return Tracked(($op)(a.val, b.val), Node)
             end))
-
         end
-
     end
 
-    for op in (Symbol(sin), Symbol(cos), [Symbol(f) for cf in CustFuncts]...)
+
+    for op in SingleTensorOperations
         eval(
             :(
                 global function ($op)(a::Tracked)
@@ -56,7 +75,20 @@ function ForwProp(f, x, w::Set)
                 end
             )
         )
+
+        eval(
+            :(
+                global function ($op)(a::Tracked, args...)
+                    Node = GenNode(Nodes)
+                    J = GetJacobian(($op), a, args...)
+                    AddEdge(Edges, a.Node, Node)
+                    AddJacobian(Jacobians, a.Node, Node, J)
+                    return Tracked(($op)(a.val, args...), Node)
+                end
+            )
+        )
     end
+
 
     y = Base.invokelatest(f, x)
     return (y, Nodes, Edges, Jacobians)

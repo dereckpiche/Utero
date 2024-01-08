@@ -3,13 +3,13 @@ module Utero
 # External
 using Random
 using LinearAlgebra
-
+using SparseArrays
 
 # Internal
 
-include("Differentiation/DirectedAcyclicGraph.jl")
-include("Differentiation/Tracking.jl")
-include("Differentiation/Jacobians.jl")
-include("Differentiation/Propagation.jl")
+include("AutoDiffTracker/DirectedAcyclicGraph.jl")
+include("AutoDiffTracker/Tracking.jl")
+include("AutoDiffTracker/Jacobians.jl")
+include("AutoDiffTracker/Propagation.jl")
 
 end
