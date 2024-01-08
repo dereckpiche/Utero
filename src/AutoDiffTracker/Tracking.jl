@@ -1,16 +1,24 @@
-function GenNode(Nodes)
-    # generate a new Node (Nodeentification in the graph)
-    Node = convert(Int64, floor(10000000 * rand()))
-    while Node in Nodes
-        Node = convert(Int64, floor(10000000 * rand()))
+
+function AddNewID(IDs::Set)
+    NewID = max(IDs...) + 1
+    push!(IDs, NewID)
+    return NewID
+end
+
+function AddParam(Parameters, val)
+    NewID = 1
+    if !isempty(Parameters) 
+        NewID = AddNewID(Set(keys(Parameters)))
     end
-    Nodes = union!(Nodes, Node)
-    return Node
+    merge!(Parameters, IdDict(NewID => val))
+    return NewID
 end
 
 mutable struct Tracked{T} <: Real 
     val::T
-    Node::Int64 # identification in the computationnal graph
-    Tracked(val, Nodes) = return new{typeof(val)}(val, GenNode(Nodes))
-    Tracked(val, Node) = return new{typeof(val)}(val, Node) 
+    ID::Int64 # identification in the computationnal graph
+    function Tracked(val, Parameters::IdDict)
+        return new{typeof(val)}(val, AddParam(Parameters, val))
+    end
+    Tracked(val, ID) = return new{typeof(val)}(val, ID) 
 end

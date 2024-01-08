@@ -67,6 +67,7 @@ GetJacobian(f::typeof(.+), a::Tracked, b::Array) = Diagonal(ones(prod(size(a))))
 GetJacobian(f::typeof(.-), a::Array, b::Tracked) = -Diagonal(ones(prod(size(a)))) 
 GetJacobian(f::typeof(.-), a::Tracked, b::Array) = Diagonal(ones(prod(size(a)))) 
 
+#TODO: complete
 """
 GetJacobian(f::typeof(.*), a::Array, b::Tracked) = Diagonal(reshape(a, 1, :)) 
 GetJacobian(f::typeof(.*), a::Tracked, b::Array) = b
