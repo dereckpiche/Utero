@@ -99,6 +99,7 @@ end
 function BackProp(y, Nodes, Edges, Jacobians, w)::IdDict
     TopoSortNodes = KahnTopoSort(Nodes, Edges)
     ChainedJacobians = IdDict{Any,Any}(y.Node => 1)
+    for j in values(Jacobians) println(size(j)) end
     for source in reverse(TopoSortNodes[1:end-1])
         CJ = false
         sinks = get(Edges, source, false)
@@ -106,6 +107,12 @@ function BackProp(y, Nodes, Edges, Jacobians, w)::IdDict
             J = get(
                 Jacobians, (source, sink), false) * get(
                     ChainedJacobians, sink, false)
+            # should be like this 
+            """
+            J = get(ChainedJacobians, sink, false)
+                *
+                get(Jacobians, (source, sink), false)
+            """
             if (CJ == false) CJ = J
             else CJ += J end
         end

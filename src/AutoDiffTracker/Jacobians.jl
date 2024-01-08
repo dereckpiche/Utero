@@ -46,8 +46,8 @@ GetJacobian(f::typeof(cos), a::Tracked) = -sin(a.val)
 
 function GetJacobian(f::typeof(*), w::Tracked, x::AbstractMatrix) # Matrix Multiplication Jacobian
     m_w, n_w = size(w.val)
-    m_x = size(x)[1]
-    J = spzeros(Float64, m_w, m_w * n_w)
+    m_x, n_x = size(x)
+    J = spzeros(Float64, m_w * n_x, m_w * n_w)
     for i in 1:m_w
         J[i, (i-1)*n_w+1:(i)*n_w] = x[1:m_x] 
     end
@@ -55,7 +55,9 @@ function GetJacobian(f::typeof(*), w::Tracked, x::AbstractMatrix) # Matrix Multi
 end
 
 function GetJacobian(f::typeof(*), w::AbstractMatrix, x::Tracked)
-    J = Diagonal(reshape(w, prod(size(w))))
+    m_w, n_w = size(w)
+    m_x, n_x = size(x.val)
+    J = spzeros(Float64, m_w * n_x, m_x * n_x)
     return J
 end
 
@@ -79,11 +81,11 @@ GetJacobian(f::typeof(.^), a::Array, b::Tracked) = @. a^(b.val) * log(a)
 # Jacobians For Single Tensor Operations
 
 function GetJacobian(f::typeof(prod), w::Tracked)
-    n = size(w)[2]
-    p = prod(w)
-    J = zeros(1:prod(size(w.val)))
+    n = size(w.val)[2]
+    p = prod(w.val)
+    J = zeros(1,prod(size(w.val)))
     for i in 1:prod(size(w.val))
-        s = w[i // n, i % n]
+        s = w.val[Int64(i // n), i % n + 1]
         J[i] = p / s
     end
     return J
