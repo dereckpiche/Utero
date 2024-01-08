@@ -57,7 +57,7 @@ end
 function GetJacobian(f::typeof(*), w::AbstractMatrix, x::Tracked)
     m_w, n_w = size(w)
     m_x, n_x = size(x.val)
-    J = spzeros(Float64, m_w * n_x, m_x * n_x)
+    J = Diagonal(reshape(x.val, prod(size(x.val))))
     return J
 end
 
