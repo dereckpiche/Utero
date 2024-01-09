@@ -17,7 +17,6 @@ end
 """ 
 Mean absolute error
 """
-
 function mae(v1::Vector, v2::Vector)
     mae = 0
     l = length(v1)

@@ -1,19 +1,16 @@
 
 TwoTensorOperations = (
-    Symbol(+), 
-    Symbol(-), 
-    Symbol(*), 
-    Symbol(/), 
-    Symbol(^)
+    :+, :-, Symbol(*), :/, :^
+)
+
+PairedTypes = (
+    :Integer, :AbstractFloat, :Array
 )
 
 SingleTensorOperations = (
-    Symbol(map),
-    Symbol(prod),
-    Symbol(sum),
-    Symbol(cos), 
-    Symbol(sin)
-)
+    :map, :sum, :prod, :cos, :sin
+) 
+
 
 function AddJacobian(Jacobians, source, sink, Jacobian)
     # adds jacobian of sink with respect to source to jacobians
@@ -30,26 +27,25 @@ function ForwProp(f, x, ParameterIDs::Set)
     global Edges = IdDict()
     global Jacobians = IdDict()
 
-    for op in TwoTensorOperations
-        for t in (Symbol(Integer), Symbol(AbstractFloat), Symbol(Array))
-
-            eval(:(global function ($op)(a::T, b::Tracked) where {T<:($t)}
+    for t in PairedTypes for op in TwoTensorOperations
+        @eval begin
+            global function ($op)(a::T, b::Tracked) where {T<:($t)}
                 ID = AddNewID(NodeIds)
                 J = GetJacobian(($op), a, b)
                 AddEdge(Edges, b.ID, ID)
                 AddJacobian(Jacobians, b.ID, ID, J)
                 return Tracked(($op)(a, b.val), ID)
-            end))
+            end
 
-            eval(:(global function ($op)(a::Tracked, b::T) where {T<:($t)}
+            global function ($op)(a::Tracked, b::T) where {T<:($t)}
                 ID = AddNewID(NodeIds)
                 J = GetJacobian(($op), a, b)
                 AddEdge(Edges, a.ID, ID)
                 AddJacobian(Jacobians, a.ID, ID, J)
                 return Tracked(($op)(a.val, b), ID)
-            end))
+            end
 
-            eval(:(global function ($op)(a::Tracked, b::Tracked)
+            global function ($op)(a::Tracked, b::Tracked)
                 ID = AddNewID(NodeIds)
                 Ja = GetJacobian(($op), a, b.val)
                 AddEdge(Edges, a.ID, ID)
@@ -58,40 +54,34 @@ function ForwProp(f, x, ParameterIDs::Set)
                 AddEdge(Edges, b.ID, ID)
                 AddJacobian(Jacobians, b.ID, ID, Jb)
                 return Tracked(($op)(a.val, b.val), ID)
-            end))
+            end
         end
-    end
+    end end
 
 
     for op in SingleTensorOperations
-        eval(
-            :(
-                global function ($op)(a::Tracked)
-                    ID = AddNewID(NodeIds)
-                    J = GetJacobian(($op), a)
-                    AddEdge(Edges, a.ID, ID)
-                    AddJacobian(Jacobians, a.ID, ID, J)
-                    return Tracked(($op)(a.val), ID)
-                end
-            )
-        )
+        @eval begin
+            global function ($op)(a::Tracked)
+                ID = AddNewID(NodeIds)
+                J = GetJacobian(($op), a)
+                AddEdge(Edges, a.ID, ID)
+                AddJacobian(Jacobians, a.ID, ID, J)
+                return Tracked(($op)(a.val), ID)
+            end
 
-        eval(
-            :(
-                global function ($op)(a::Tracked, args...)
-                    ID = AddNewID(NodeIds)
-                    J = GetJacobian(($op), a, args...)
-                    AddEdge(Edges, a.ID, ID)
-                    AddJacobian(Jacobians, a.ID, ID, J)
-                    return Tracked(($op)(a.val, args...), ID)
-                end
-            )
-        )
+            global function ($op)(a::Tracked, args...)
+                ID = AddNewID(NodeIds)
+                J = GetJacobian(($op), a, args...)
+                AddEdge(Edges, a.ID, ID)
+                AddJacobian(Jacobians, a.ID, ID, J)
+                return Tracked(($op)(a.val, args...), ID)
+            end
+        end
     end
-
 
     y = Base.invokelatest(f, x)
     return (y, NodeIds, Edges, Jacobians)
+
 end
 
 
