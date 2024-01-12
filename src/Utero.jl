@@ -4,9 +4,22 @@ using Random
 using LinearAlgebra
 using SparseArrays
 
+import Base.:-
+import Base.:*
+import Base.:/
+import Base.:^
+import Base.sin
+import Base.cos
+import Base.map
+import Base.prod
+import Base.sum
 
-include("AutoDiffDual/ReverseDual.jl")
-include("AutoDiffDual/ReverseModeAD.jl")
+import Base.convert
+import Base.promote_rule
+
+include("AutoDiffByDual/Overloading.jl")
+include("AutoDiffByDual/ReverseDual.jl")
+include("AutoDiffByDual/ReverseModeAD.jl")
 
 """
 include("AutoDiffTracker/DirectedAcyclicGraph.jl")
