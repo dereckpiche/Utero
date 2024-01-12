@@ -1,6 +1,6 @@
 
 TwoTensorOperations = (
-    :+, :-, Symbol(*), :/, :^
+    :+, :-, :*, :/, :^
 )
 
 PairedTypes = (
@@ -18,12 +18,12 @@ function AddJacobian(Jacobians, source, sink, Jacobian)
 end
 
 
-function ForwProp(f, x, ParameterIDs::Set)
+function ForwProp(f, w, Parameters::IdDict)
 
     # Overcharge the operators to create a computationnal graph as well as 
     # the intermediate jacobians for backpropagation at a later stage
 
-    global NodeIds = deepcopy(ParameterIDs)
+    global NodeIds = deepcopy(Set(keys(Parameters)))
     global Edges = IdDict()
     global Jacobians = IdDict()
 
@@ -79,8 +79,8 @@ function ForwProp(f, x, ParameterIDs::Set)
         end
     end
 
-    y = Base.invokelatest(f, x)
-    return (y, NodeIds, Edges, Jacobians)
+    y = Base.invokelatest(f, w)
+    return (y, NodeIds, Edges, Jacobians, Parameters)
 
 end
 
@@ -119,9 +119,21 @@ function BackProp(y, Nodes, Edges, Jacobians, Parameters)::IdDict
 end
 
 
-function GetGradient(f, x, Parameters)::IdDict
-    y, Nodes, Edges, Jacobians = ForwProp(f, x, Set(keys(Parameters)))
-    return BackProp(y, Nodes, Edges, Jacobians, Parameters)
+function GetGradient(f::Any, w::Tracked, Parameters)::IdDict
+    return BackProp(ForwProp(f, w, Parameters)...)
 end
 
+function GetGradient(f::Any, nothing, Parameters)::IdDict
+    return BackProp(ForwProp(f, nothing, Parameters)...)
+end
 
+function GetGradient(f::Any, x::AbstractFloat)::IdDict
+    params = IdDict()
+    x = Tracked(x, params)
+    g = BackProp(ForwProp(f, x, params)...)
+    return values(g)[1]
+end
+
+function GetGradient(f::Any, Parameters::IdDict) # implicit
+    return GetGradient(f, nothing, Parameters)
+end

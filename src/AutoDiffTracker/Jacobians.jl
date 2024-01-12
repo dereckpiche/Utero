@@ -89,8 +89,8 @@ GetJacobian(f::typeof(.^), a::Array, b::Tracked) = @. a^(b.val) * log(a)
 function GetJacobian(f::typeof(map), w::Tracked, mapf)  # most important jacobian for tensors
     J = Diagonal(zeros(prod(size(w.val))))
     for i in 1:prod(size(w.val))
-        ele = w.val[Int64(i // n), i % n + 1]
-        J[i, i] = GetGradient(mapf, Tracker(ele)) #TODO fix bad form 
+        w_el = w.val[Int64(i // n), i % n + 1]
+        J[i, i] = GetGradient(mapf, w_el)
     end
 end
 

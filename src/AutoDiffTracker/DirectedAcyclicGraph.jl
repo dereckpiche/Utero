@@ -1,6 +1,9 @@
 function AddEdge(Edges, source, sink)
-    if source in keys(Edges) merge!(Edges, IdDict(source=>Set([sink, get(Edges, source, false)...])))
-    else merge!(Edges, IdDict(source=>Set([sink]))) end 
+    if source in keys(Edges) 
+        merge!(Edges, IdDict(source=>Set([sink, get(Edges, source, false)...])))
+    else 
+        merge!(Edges, IdDict(source=>Set([sink]))) 
+    end 
 end
 
 function RemoveEdge(Edges, source, sink)
@@ -10,13 +13,17 @@ end
 function ReverseEdges(Edges)::IdDict
     ReversedEdges = IdDict{}
     for (source, sinks) in edges
-        for sink in sinks AddEdge(ReversedEdges, source, sink) end
+        for sink in sinks 
+            AddEdge(ReversedEdges, source, sink)
+        end
     end
     return ReversedEdges
 end
 
 function HasIncomingEdge(Edges, Node)::Bool
-    for sinks in values(Edges)  if (Node in sinks) return true end end
+    for sinks in values(Edges)  
+        if (Node in sinks) return true end 
+    end
     return false
 end
 
@@ -33,8 +40,10 @@ function KahnTopoSort(Nodes::Set, edges::IdDict)
         sinks = get(Edges, source, false)
         if sinks!=false for sink in sinks
             RemoveEdge(Edges, source, sink)
-            if !HasIncomingEdge(Edges, sink) NoIncomingEdges = union(NoIncomingEdges, Set(sink)) end
-        end end
+            if !HasIncomingEdge(Edges, sink) 
+                NoIncomingEdges = union(NoIncomingEdges, Set(sink)) 
+            end
+        end 
     end
     return Sorted
 end
