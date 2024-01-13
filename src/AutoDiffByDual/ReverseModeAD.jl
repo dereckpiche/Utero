@@ -1,27 +1,30 @@
-
-
-function ⬅ChainRule(∂l∂z, ids, linker)
-    sum = 0
-    ∂ls = linker(∂l∂z)
-    for (id, ∂l) in zip(ids, ∂ls)
-         sum += id*∂l 
+function CumulGrads(Gradients, GradIDTape)
+    grads = Dict()
+    for (i, ID) in enumerate(GradIDTape) 
+        if ID == NotParam() continue end
+        if haskey(grads, ID)
+            grads[ID] += Gradients[i]
+        else setindex!(grads, Gradients[i], ID) end
     end
-    return sum
+    return grads
 end
 
 
 function ForwardBackward(f, x)
     global Gradients = [1.0]
-    global Linkers = [] 
+    global Linkers = []
+    global GradIDTape = []
 
     # Forward Pass
     l = f(x)
-
-    for l in Linkers println(l) end
 
     # Backward Pass
     for (linker, ∂l∂z) in zip(Linkers, Gradients)
         append!(Gradients, linker(∂l∂z)...)
     end
-    return Gradients
+
+    @show Gradients
+    @show GradIDTape
+    popfirst!(Gradients)
+    return CumulGrads(reverse(Gradients), reverse(GradIDTape))
 end

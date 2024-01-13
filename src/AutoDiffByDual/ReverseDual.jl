@@ -17,7 +17,7 @@ function ⬅Dual(::typeof(-), x, y)
     ∂z∂x = 1
     ∂z∂y = -1
     SubstractionLinker(∂l∂z) = (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
-    return z, SubstractionLinkler
+    return z, SubstractionLinker
 end
 
 function ⬅Dual(::typeof(*), x, y)
@@ -31,7 +31,7 @@ end
 function ⬅Dual(::typeof(/), x, y)
     z = x * y
     ∂z∂x = y
-    ∂z∂y = x
+    ∂z∂y = -x/y^2
     DivisionLinker(∂l∂z) = (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
     return z, DivisionLinker
 end
@@ -44,18 +44,18 @@ function ⬅Dual(::typeof(^), x, y)
     return z, ExponentiationLinker
 end
 
-function ⬅Dual(::typeof(sin), x)
+function ⬅Dual(::typeof(sin), x::Real)
     z = sin(x)
     ∂z∂x = cos(x)
-    Linker(∂l∂z) = (∂l∂z*∂z∂x)
-    return z, Linker
+    SinLinker(∂l∂z) = (∂l∂z*∂z∂x)
+    return z, SinLinker
 end
 
-function ⬅Dual(::typeof(cos), x)
-    # TODO
+function ⬅Dual(::typeof(cos), x::Real)
     z = cos(x)
     ∂z∂x = -sin(x)
-    return z, ∇z -> ∇z * cos(x)
+    CosLinker(∂l∂z) = (∂l∂z*∂z∂x)
+    return z, CosLinker
 end
 
 
