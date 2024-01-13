@@ -14,7 +14,7 @@ function ForwardBackward(f, x)
     global ⬅ctx = ⬅Ctx([])
 
     # Forward Pass
-    l = invokelatest(f, x)
+    l = f(x)
 
     # Backward Pass
     for x in reverse(⬅ctx.Tape)
