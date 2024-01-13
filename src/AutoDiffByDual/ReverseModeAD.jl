@@ -19,6 +19,7 @@ function ForwardBackward(f, x)
     # Backward Pass
     setindex!(⬅ctx.Gradients, 1.0, l.idf)
     for x in reverse(⬅ctx.Tape)
+        @show ⬅ctx.Gradients
         ⬅grad(x)
     end
     return ⬅ctx.Gradients
