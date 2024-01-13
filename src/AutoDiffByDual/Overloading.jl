@@ -29,16 +29,28 @@ end
 DualedFs = (:+, :-, :*, :/, :^, :sin, :cos)
 for f in DualedFs
     @eval begin
-    function Base.$f(X::Tracker...)
-        (z, Linker) = ⬅Dual($f, [x.val for x in X]...)
+    function Base.$f(x::Tracker, y::Tracker)
+        (z, Linker) = ⬅Dual($f, x.val, y.val)
         z = Tracker(z)
-        for (i, x) in enumerate(X)
-            push!(x.linkers, ∇ -> Linker(∇)[i])
-            push!(x.parents, z.idf)
-            push!(⬅ctx.Tape, x)
+        for (s, i) in [(x, 1), (x, 2)]
+            push!(s.linkers, ∇ -> Linker(∇)[i])
+            push!(s.parents, z.idf)
+            push!(⬅ctx.Tape, s)
         end
         return z
     end
+
+    @eval begin
+        function Base.$f(x::Tracker)
+            (z, Linker) = ⬅Dual($f, x.val)
+            z = Tracker(z)
+            push!(x.linkers, ∇ -> Linker(∇))
+            push!(x.parents, z.idf)
+            push!(⬅ctx.Tape, x)
+            return z
+        end
+    end
+
     Base.$f(x::Tracker, y::Real) = Base.$f(x, Tracker(y))
     Base.$f(x::Real, y::Tracker) = Base.$f(Tracker(x), y)
 end
