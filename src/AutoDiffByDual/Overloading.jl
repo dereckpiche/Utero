@@ -5,24 +5,24 @@ struct ⬅Ctx
     ⬅Ctx(tape) = new(tape)
 end
 
-struct Tracker{T}
+mutable struct Tracker{T}
     val::T
+    grad
     idf # Static identification function
-    parfs 
+    linkers
+    parents
     function Tracker(val) 
         idf = _ -> nothing # easy way to create reference
-        return new{typeof(val)}(val, idf, [])
+        return new{typeof(val)}(val, 0.0, idf, Set([]), [])
     end
 end
 
-"""
 function ⬅grad(x::Tracker)
-    g = 0.0
-    for partial in x.parfs
-        g += partial()
+    for (linker, parent) in zip(x.linkers, x.parents)
+        x.grad += linker(parent.grad)
     end
+    return x.grad
 end
-"""
 
 
 DualedFs = (:+, :-, :*, :/, :^, :sin, :cos)
@@ -31,18 +31,15 @@ for f in DualedFs
     function Base.$f(X::Tracker...)
         (z, Linker) = ⬅Dual($f, [x.val for x in X]...)
         z = Tracker(z)
-        λ = ∇ -> Linker(∇)[i]
         for (i, x) in enumerate(X)
-            @eval begin
-            function ⬅grad(::$zidf, ::$zidf, ∇) Linker(∇)[i] end
-            end
-            append!(x.parfs, z)
-            append!(⬅ctx.Tape, x, y)
+            push!(x.linkers, ∇ -> Linker(∇)[i])
+            push!(x.parents, z)
+            push!(⬅ctx.Tape, x)
         end
         return z
     end
     Base.$f(x::Tracker, y::Real) = Base.$f(x, Tracker(y))
-    Base.$f(x::Real, y::Tracker) = Base.$f(Tracker(x), u)
+    Base.$f(x::Real, y::Tracker) = Base.$f(Tracker(x), y)
 end
 end
 
