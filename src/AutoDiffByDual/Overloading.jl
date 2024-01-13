@@ -1,77 +1,52 @@
 # TODO: make this all clean and abstract once it works
 
-struct Param
+struct ⬅Ctx
+    Tape
+    ⬅Ctx(tape) = new(tape)
+end
+
+mutable struct Tracker
     val
-    ID
-end
-
-struct OvWrapper <:Number
-    val
-end
-
-struct NotParam end
-
-Linkers = []
-GradIDTape = []
-
-OvWrap(x::Real) = OvWrapper(x)
-OvWrap(x::OvWrapper) = x
-
-for  f in (:+, :-, :*, :/, :^)
-    @eval begin
-        function Base.$f(x::Param, y::Number)
-            push!(GradIDTape, x.ID, NotParam())
-            return $f(OvWrap(x.val), OvWrap(y))
-        end
-    end
-
-    @eval begin
-        function Base.$f(x::Number, y::Param)
-            push!(GradIDTape, NotParam(), y.ID)
-            return $f(OvWrap(x), OvWrap(y.val))
-        end
-    end
-
-    @eval begin
-        function Base.$f(x::Param, y::Param)
-            push!(GradIDTape, x.ID, y.ID)
-            return $f(OvWrap(x.val), OvWrap(y.val))
-        end
+    idf # Static identification function
+    parfs 
+    function Tracker(val) 
+        idf = _ -> nothing # easy way to create reference
+        return new(val, idf, [])
     end
 end
 
+"""
+function ⬅grad(x::Tracker)
+    g = 0.0
+    for partial in x.parfs
+        g += partial()
+    end
+end
+"""
 
 
-for  f in (:+, :-, :*, :/, :^)
+DualedFs = (:+, :-, :*, :/, :^, :sin, :cos)
+for  f in DualedFs
     @eval begin
-        function Base.$f(x::OvWrapper, y::OvWrapper)
-            z, linker = ⬅Dual($f, x.val, y.val)
-            push!(Linkers, linker)
-            #pushfirst!(GradIDTape, NotParam())
-            return OvWrap(z)
+        function Base.$f(x::Tracker, y::Tracker)
+            (z, Linker) = ⬅Dual(typeof($f), x.val, y.val)
+            z = Tracker(z)
+            λ = ∇ -> Linker(∇)[i]
+            #@eval begin
+            #    global ⬅grad(::typeof(z.idf), ::typeof(x.idf), ∇) = Linker(∇)[1]
+            #end
+            append!(x.parfs, z)
+            #@eval begin
+            #    global ⬅grad(::typeof(z.idf), ::typeof(y.idf), ∇) = Linker(∇)[2]
+            #end
+            append!(y.parfs, z)
+            # add to Tape
+            append!(⬅ctx.Tape, x, y)
+            return z
         end
     end
 end
 
-for  f in (:sin, :cos)
-    @eval begin
-        function Base.$f(x::Param)
-            push!(GradIDTape, x.ID)
-            return $f(OvWrap(x.val))
-        end
-    end
-end
-
-for  f in (:sin, :cos)
-    @eval begin
-        function Base.$f(x::OvWrapper)
-            z, linker = ⬅Dual($f, x.val)
-            push!(Linkers, linker)
-            #pushfirst!(GradIDTape, NotParam())
-            return OvWrap(z)
-        end
-    end
-end
-
-convert(::Type{OvWrapper}, x::Real) = OvWrapper(x)
-promote_rule(::Type{OvWrapper}, ::Type{<:Number}) = OvWrapper
+convert(::Type{Tracker}, x::Real) = Tracker(x)
+convert(::Type{Tracker}, x::Int) = Tracker(x)
+promote_rule(::Type{Tracker}, ::Type{<:Number}) = Tracker

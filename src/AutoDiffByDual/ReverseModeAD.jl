@@ -11,20 +11,14 @@ end
 
 
 function ForwardBackward(f, x)
-    global Gradients = [1.0]
-    global Linkers = []
-    global GradIDTape = []
+    global ⬅ctx = ⬅Ctx([])
 
     # Forward Pass
-    l = f(x)
+    l = invokelatest(f, x)
 
     # Backward Pass
-    for (linker, ∂l∂z) in zip(Linkers, Gradients)
-        append!(Gradients, linker(∂l∂z)...)
+    for x in reverse(⬅ctx.Tape)
+        ⬅grad(x)
     end
 
-    @show Gradients
-    @show GradIDTape
-    popfirst!(Gradients)
-    return CumulGrads(reverse(Gradients), reverse(GradIDTape))
 end
