@@ -26,25 +26,22 @@ end
 
 
 DualedFs = (:+, :-, :*, :/, :^, :sin, :cos)
-for  f in DualedFs
+for f in DualedFs
     @eval begin
-        function Base.$f(x::Tracker, y::Tracker)
-            (z, Linker) = ⬅Dual(typeof($f), x.val, y.val)
-            z = Tracker(z)
-            λ = ∇ -> Linker(∇)[i]
-            #@eval begin
-            #    global ⬅grad(::typeof(z.idf), ::typeof(x.idf), ∇) = Linker(∇)[1]
-            #end
+    global function Base.$f(X::Tracker...)
+        (z, Linker) = ⬅Dual(typeof($f), [x.val for x in X]...)
+        z = Tracker(z)
+        λ = ∇ -> Linker(∇)[i]
+        for (i, x) in enumerate(X)
+            @eval begin
+                global ⬅grad(::typeof(z.idf), ::typeof(x.idf), ∇) = Linker(∇)[i]
+            end
             append!(x.parfs, z)
-            #@eval begin
-            #    global ⬅grad(::typeof(z.idf), ::typeof(y.idf), ∇) = Linker(∇)[2]
-            #end
-            append!(y.parfs, z)
-            # add to Tape
             append!(⬅ctx.Tape, x, y)
-            return z
         end
+        return z
     end
+end
 end
 
 convert(::Type{Tracker}, x::Real) = Tracker(x)
