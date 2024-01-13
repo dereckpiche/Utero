@@ -15,12 +15,11 @@ function ForwardBackward(f, x)
 
     # Forward Pass
     l = f(x)
+
     # Backward Pass
-    ⬅ctx.Tape[end].grad=1
-    for x in ⬅ctx.Tape
-        for y in ⬅ctx.Tape print([t.grad for t in y.parents]) end
-        println()
+    setindex!(⬅ctx.Gradients, 1.0, l.idf)
+    for x in reverse(⬅ctx.Tape)
         ⬅grad(x)
     end
-
+    return ⬅ctx.Gradients
 end
