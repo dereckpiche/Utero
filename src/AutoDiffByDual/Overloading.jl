@@ -1,70 +1,70 @@
-# TODO: make this all clean and abstract once it works
-
-struct ⬅Ctx
+mutable struct ⬅Context
+    Params
     Tape
     Gradients::Dict
-    ⬅Ctx(tape) = new(tape, Dict())
+    Counter
+    function ⬅Context()
+        return new([], [], Dict(), [0])
+    end
 end
 
-mutable struct Tracker{T}
+function Param(ctx::⬅Context, x::Real)
+    x = ⬅Tracker(ctx, x)
+    push!(ctx.Params, x.id)
+    return x
+end
+
+
+mutable struct ⬅Tracker{T}
     val::T
-    idf # Static identification function
+    id::Int64 # Static identification function
     linkers
     parents
-    function Tracker(val) 
-        idf = _ -> nothing # easy way to create reference
-        idf = rand() * 100
-        t = new{typeof(val)}(val, idf, [], [])
-        return t
+    function ⬅Tracker(val) 
+        global Counter[1] += 1
+        id = Counter[1]
+        return new{typeof(val)}(val, id, [], [])
+    end
+
+    function ⬅Tracker(ctx::⬅Context, val) 
+        ctx.Counter[1] += 1
+        return new{typeof(val)}(val, ctx.Counter[1], [], [])
     end
 end
 
-function ⬅grad(x::Tracker)
-    g = 0.0
-    for (l, p) in zip(x.linkers, x.parents)
-        g += l(getindex(⬅ctx.Gradients, p))
-    end
-    if haskey(⬅ctx.Gradients, x.idf)
-        ⬅ctx.Gradients[x.idf] += g
-    else 
-        setindex!(⬅ctx.Gradients, g, x.idf) 
-    end 
-    return g
-end
 
-
-DualedFs = (:+, :-, :*, :/, :^, :sin, :cos)
-for f in DualedFs
+⬅Overloaded = (:+, :-, :*, :/, :^, :sin, :cos)
+for f in ⬅Overloaded
     @eval begin
-    function Base.$f(x::Tracker, y::Tracker)
+    function Base.$f(x::⬅Tracker, y::⬅Tracker)
         z, Linker = ⬅Dual($f, x.val, y.val)
-        z = Tracker(z)
+        z = ⬅Tracker(z)
         for (s, i) in [(x, 1), (y, 2)]
             push!(s.linkers, ∇ -> Linker(∇)[i])
-            push!(s.parents, z.idf)
-            push!(⬅ctx.Tape, s)
+            push!(s.parents, z.id)
+            push!(Tape, s)
         end
         return z
     end
 
     @eval begin
-        function Base.$f(x::Tracker)
+        function Base.$f(x::⬅Tracker)
             (z, Linker) = ⬅Dual($f, x.val)
-            z = Tracker(z)
+            z = ⬅Tracker(z)
             push!(x.linkers, ∇ -> Linker(∇))
-            push!(x.parents, z.idf)
-            push!(⬅ctx.Tape, x)
+            push!(x.parents, z.id)
+            push!(Tape, x)
             return z
         end
     end
 
-    Base.$f(x::Tracker, y::Real) = Base.$f(x, Tracker(y))
-    Base.$f(x::Real, y::Tracker) = Base.$f(Tracker(x), y)
+    Base.$f(x::⬅Tracker, y::Real) = Base.$f(x, ⬅Tracker(y))
+    Base.$f(x::Real, y::⬅Tracker) = Base.$f(⬅Tracker(x), y)
 end
 end
 
 """
-convert(::Type{Tracker}, x::Real) = Tracker(x)
-convert(::Type{Tracker}, x::Int) = Tracker(x)
-promote_rule(::Type{Tracker}, ::Type{<:Number}) = Tracker
+convert(::Type{⬅Tracker}, x::Real) = ⬅Tracker(x)
+convert(::Type{⬅Tracker}, x::Int) = ⬅Tracker(x)
+promote_rule(::Type{⬅Tracker}, ::Type{<:Number}) = ⬅Tracker
 """
