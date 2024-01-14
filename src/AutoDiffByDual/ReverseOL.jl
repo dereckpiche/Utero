@@ -28,7 +28,7 @@ end
 
 mutable struct ⬅Tracker{T}
     val::T
-    id::Int64 # Static identification function
+    id::Int64 
     linkers
     parents
     function ⬅Tracker(val) 
@@ -43,9 +43,11 @@ mutable struct ⬅Tracker{T}
     end
 end
 
+"""
+Overload primitive functions. Record the function order on tape.
+"""
 
-⬅Overloaded = (:+, :-, :*, :/, :^, :sin, :cos)
-for f in ⬅Overloaded
+for f in ⬅Dualed
     @eval begin
     function Base.$f(x::⬅Tracker, y::⬅Tracker)
         z, Linker = ⬅Dual($f, x.val, y.val)

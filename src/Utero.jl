@@ -17,8 +17,8 @@ import Base.sum
 import Base.convert
 import Base.promote_rule
 
-include("AutoDiffByDual/Overloading.jl")
 include("AutoDiffByDual/ReverseDual.jl")
+include("AutoDiffByDual/ReverseOL.jl")
 include("AutoDiffByDual/ReverseModeAD.jl")
 
 """
