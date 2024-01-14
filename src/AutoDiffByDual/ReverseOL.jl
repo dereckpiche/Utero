@@ -28,10 +28,10 @@ mutable struct ⬅Tracker{T}
 end
 
 """
-Overload primitive functions. Record the function order on tape.
+Overload primitive functions. Record the execution history on 'Tape'.
 """
 
-for f in ⬅Dualed
+for f in ⬅DualedReal
     @eval begin
     function $f(x::⬅Tracker, y::⬅Tracker)
         z, Chainer = ⬅Dual($f, x.val, y.val)
