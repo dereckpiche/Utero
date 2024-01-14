@@ -8,10 +8,21 @@ mutable struct ⬅Context
     end
 end
 
-function Param(ctx::⬅Context, x::Real)
+
+function Params(ctx::⬅Context, x::Real)
     x = ⬅Tracker(ctx, x)
     push!(ctx.Params, x.id)
     return x
+end
+
+function Params(ctx::⬅Context, X...)
+    ps = []
+    for x in X 
+        x = ⬅Tracker(ctx, x)
+        push!(ctx.Params, x.id)
+        push!(ps, x)
+    end
+    return ps
 end
 
 

@@ -30,4 +30,6 @@ include("AutoDiffTracker/Propagation.jl")
 include("Training/Loss.jl")
 """
 
+export ⬅Context, Params, ForwardBackward
+
 end

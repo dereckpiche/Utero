@@ -21,18 +21,18 @@ function ⬅Chain(ctx::⬅Context, x::⬅Tracker)
     return g
 end
 
-function ForwardBackward(ctx::⬅Context, f::Function, x)
+function ForwardBackward(ctx::⬅Context, f::Function, X...)
     global Tape = ctx.Tape
     global Counter = ctx.Counter
 
     # Forward Pass
-    l = f(x)
+    y = f(X...)
 
     # Backward Pass
-    setindex!(ctx.Gradients, 1.0, l.id)
-    push!(ctx.Tape, l)
-    for x in reverse(ctx.Tape)
-        ⬅Chain(ctx, x)
+    setindex!(ctx.Gradients, 1.0, y.id)
+    push!(ctx.Tape, y)
+    for z in reverse(ctx.Tape)
+        ⬅Chain(ctx, z)
     end
-    return Gradients(ctx)
+    return (y.val, Gradients(ctx))
 end
