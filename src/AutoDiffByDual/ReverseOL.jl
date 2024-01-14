@@ -1,7 +1,7 @@
 mutable struct ⬅Context
     Params
     Tape
-    Gradients::Dict
+    Jacobians::Dict
     Counter
     function ⬅Context()
         return new([], [], Dict(), [0])
@@ -9,28 +9,12 @@ mutable struct ⬅Context
 end
 
 
-function Params(ctx::⬅Context, x::Real)
-    x = ⬅Tracker(ctx, x)
-    push!(ctx.Params, x.id)
-    return x
-end
-
-function Params(ctx::⬅Context, X...)
-    ps = []
-    for x in X 
-        x = ⬅Tracker(ctx, x)
-        push!(ctx.Params, x.id)
-        push!(ps, x)
-    end
-    return ps
-end
-
 
 mutable struct ⬅Tracker{T}
     val::T
     id::Int64 
-    linkers
-    parents
+    Chainers
+    Childs
     function ⬅Tracker(val) 
         global Counter[1] += 1
         id = Counter[1]
@@ -50,11 +34,11 @@ Overload primitive functions. Record the function order on tape.
 for f in ⬅Dualed
     @eval begin
     function $f(x::⬅Tracker, y::⬅Tracker)
-        z, Linker = ⬅Dual($f, x.val, y.val)
+        z, Chainer = ⬅Dual($f, x.val, y.val)
         z = ⬅Tracker(z)
         for (s, i) in [(x, 1), (y, 2)]
-            push!(s.linkers, ∇ -> Linker(∇)[i])
-            push!(s.parents, z.id)
+            push!(s.Chainers, ∇ -> Chainer(∇)[i])
+            push!(s.Childs, z.id)
             push!(Tape, s)
         end
         return z
@@ -62,10 +46,10 @@ for f in ⬅Dualed
 
     @eval begin
         function Base.$f(x::⬅Tracker)
-            (z, Linker) = ⬅Dual($f, x.val)
+            (z, Chainer) = ⬅Dual($f, x.val)
             z = ⬅Tracker(z)
-            push!(x.linkers, ∇ -> Linker(∇))
-            push!(x.parents, z.id)
+            push!(x.Chainers, ∇ -> Chainer(∇))
+            push!(x.Childs, z.id)
             push!(Tape, x)
             return z
         end

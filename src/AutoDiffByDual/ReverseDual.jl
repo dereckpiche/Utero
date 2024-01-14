@@ -1,7 +1,8 @@
 ⬅Dualed = []
 
 """
-    ⬅Dual(::typeof(f), x1, x2, ...)
+    ⬅Dual(::typeof(f), x1::Real, x2::Real, ...)
+"⬅" stands for "reverse mode"
 On the left, return the result of the operation. 
 With z = f(x1, x2, ...), on the right, return the function
 ``∂l/∂z -> ∂l/∂x1, ∂l/∂x2, ...``
