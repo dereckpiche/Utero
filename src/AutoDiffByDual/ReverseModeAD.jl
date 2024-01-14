@@ -6,7 +6,7 @@ function Gradients(ctx::⬅Context)
     return grads
 end
 
-function ⬅Chain(ctx::⬅Context, x::⬅Tracker)
+function ⬅ChainStep(ctx::⬅Context, x::⬅Tracker)
     g = 0.0
     if !isempty(x.linkers)
         l = pop!(x.linkers)
@@ -32,7 +32,7 @@ function ForwardBackward(ctx::⬅Context, f::Function, X...)
     setindex!(ctx.Gradients, 1.0, y.id)
     push!(ctx.Tape, y)
     for z in reverse(ctx.Tape)
-        ⬅Chain(ctx, z)
+        ⬅ChainStep(ctx, z)
     end
     return (y.val, Gradients(ctx))
 end

@@ -4,6 +4,7 @@ using Random
 using LinearAlgebra
 using SparseArrays
 
+import Base.:+
 import Base.:-
 import Base.:*
 import Base.:/

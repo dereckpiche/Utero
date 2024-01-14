@@ -49,7 +49,7 @@ Overload primitive functions. Record the function order on tape.
 
 for f in ⬅Dualed
     @eval begin
-    function Base.$f(x::⬅Tracker, y::⬅Tracker)
+    function $f(x::⬅Tracker, y::⬅Tracker)
         z, Linker = ⬅Dual($f, x.val, y.val)
         z = ⬅Tracker(z)
         for (s, i) in [(x, 1), (y, 2)]
