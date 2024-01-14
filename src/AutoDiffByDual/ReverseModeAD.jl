@@ -18,8 +18,9 @@ function ForwardBackward(f, x)
 
     # Backward Pass
     setindex!(⬅ctx.Gradients, 1.0, l.idf)
+    push!(⬅ctx.Tape, l)
     for x in reverse(⬅ctx.Tape)
-        ⬅grad(x)
+        println(⬅grad(x))
     end
     return ⬅ctx.Gradients
 end
