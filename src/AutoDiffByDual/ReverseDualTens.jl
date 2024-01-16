@@ -54,6 +54,7 @@ function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
     end
 
     Ṫy = Tensobian(spzeros(Float64, Mx, Ny, Mx, Nx), 2)
+    
 
     # Compute Tensobian of Z with respect to y
     Ṫzy = spzeros(Float64, Mx, Ny, Mx, Nx)
