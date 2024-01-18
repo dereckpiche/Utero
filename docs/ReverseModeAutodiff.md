@@ -11,7 +11,13 @@ Then, we can use the Chainers of each $z_i$ to obtain the partial derivative of 
 $$\frac{\partial c}{\partial x_k} = \sum_i \left[L_{x}(\frac{\partial c}{\partial z_i}) \right]_k$$
 
 
-# The Tensobian, Ṫ
+# The Tensorial Jacobian
+Let a $f : \mathbb{R}^{C_1, C_2, \dots} \to \mathbb{R}^{K_1, K_2, \dots}$. The tensorial Jacobian for this mapping is the tensor $J$ which respects
+$$
+J_{k_1, k_2, \dots, c_1, c_2, \dots} = \frac{\partial f(X)_{k_1, k_2, \dots}}{\partial X_{c_1, c_2, \dots}}
+$$
+
+## Chain Rule for the Tensorial Jacobian
 Let $f : \mathbb{R}^{C_1, C_2, \dots} \to \mathbb{R}^{K_1, K_2, \dots}$,
 $g : \mathbb{R}^{V_1, V_2, \dots} \to \mathbb{R}^{C_1, C_2, \dots}$
 and $h(x) = f \circ g (x)$. Then $h : \mathbb{R}^{V_1, V_2, \dots} \to \mathbb{R}^{K_1, K_2, \dots}$. 
@@ -38,12 +44,20 @@ $$
 $$
 where $\sum_{}$ is an abbreviation of $$. We can also use Einstein summation notation for an implicit sum:
 
-### Tensobian of Matrix Multiplication
+## Tensorial Jacobian of Matrix Multiplication
 Let $f(X) = X \times Y$. Then $f: \mathbb{R}^{M_x \times N_x} \to \mathbb{R}^{M_x \times N_Y}$. 
 We have $$f(X)_{i, j} = \sum_k X_{i, k} Y_{k, j}$$ Thus,
 $$\frac{\partial f(X)_{i,j}}{\partial X_{s, t}} = 
 \begin{cases}
 Y_{j, t} & \text{if $s = i$} \\
 0 & \text{else}
-\end{cases}
+\end{cases}$$
+Let $f(Y) = X \times Y$. Then $f: \mathbb{R}^{M_y \times N_y} \to \mathbb{R}^{M_x \times N_Y}$
+Thus, 
+$$\frac{\partial f(Y)_{i,j}}{\partial Y_{s, t}} = 
+\begin{cases}
+X_{i, s} & \text{if $t = j$} \\
+0 & \text{else}
+\end{cases}$$
+
 

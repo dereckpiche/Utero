@@ -1,32 +1,30 @@
 ⬅DualedTens = []
 
 """
-    Tensobian
-Special tensorized version of the Jacobian to store first order partial derivatives.
-For the Tensobian Ṫ of a function Z = f(U), where U and Z are tensors of arbitrary order,
-Ṫ.∂Z∂U[i1, i2, i3, ..., in] is the partial derivative of Z[i1, i2, ..., is] with respect to
-U[is+1, is+2, ..., in]. Ṫ.split stores s.
+    Chain(Jxy, Jyz)
+Apply the chain rule for two Jacobians.
 """
-struct Tensobian
-    ∂Z∂U::AbstractArray
-    split::Int64 # Index of input output separation.
-    function Tensobian(∂Z∂U::AbstractArray, split::Int64)
-        return new(∂Z∂U, split)
+GetOrder(X::AbstractArray) = length(size(X))
+
+
+function Chain(Jxy::AbstractArray, Jyz::AbstractArray, OrderY::Int64)
+    xdims = size(Jxy)[OrderY+1,end]
+    ydims = size(Jxy)[1, OrderY]
+    zdims = size(Jyz)[1, GetOrder(Jyz)-OrderY]
+    J = zeros(zdims, xdims)
+    xIters = map(k -> 1:k, xdims)
+    yIters = map(k -> 1:k, ydims)
+    zIters = map(k -> 1:k, zdims)
+    for (zindices, xindices) in zip(zip(zIters...), zip(xIters...))
+        chainsum = 0.0
+        for yindices in zip(yIters...)
+            chainsum += Jxy[yindices..., xindices...] * Jyz[zindices..., yindices...]
+        end
+        J[zindices..., xindices...] = chainsum
     end
 end
 
-"""
-    TbChain(x, y)
-Apply the chain rule to two Tensobians.
-"""
-TbChain(x::AbstractMatrix, y::AbstractMatrix) = x*y
-TbChain(x::AbstractArray, y::Real) = x*y
-TbChain(x::AbstractArray, y::Real) = x*y
-TbChain(x::Real, y::AbstractArray) = x*y
-
-function TbChain(x::Tensobian, y::Tensobian)
-    # TODO
-end
+GetOrder(X::AbstractArray) = length(size(X))
 
 """
     ⬅Dual(::typeof(f), x1::AbstractArray, x2::AbstractArray, ...)
@@ -34,42 +32,48 @@ On the left, return the result of the operation.
 With z = f(x1, x2, ...), on the right, return the 
 'Chainer" function: ``Ṫ(Z) -> Ṫ(X1), Ṫ(X2), ...``
 """
-function ⬅Dual(::typeof(+), x::AbstractArray, y::AbstractArray)
-    # TODO
-    z = x + y
-    Ṫzx = x
-    Ṫzy = x
-    return z, Ṫz -> (TbChain(Ṫzx, Ṫz), TbChain(Ṫzy, Ṫz))
-end
-push!(⬅DualedTens, :+)
-
 function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
     Z = X * Y
     (Mx, Nx) = size(X); (My, Ny) = size(Y)
-
-    # Compute Tensobian of Z with respect to X
-    Ṫx = Tensobian(spzeros(Float64, Mx, Ny, Mx, Nx), 2)
+    # Compute Tensobian Jacobian of Z with respect to X
+    Jxz = spzeros(Float64, Mx, Ny, Mx, Nx)
     for i in 1:Mx
-        Ṫx.∂Z∂U[i, 1:end, i, 1:end] = Y
+        Jxz[i, 1:end, i, 1:end] = Y
     end
+    # Compute Tensorial Jacobian of Z with respect to y
+    Jyz = spzeros(Float64, Mx, Ny, My, Ny)
+    for i in 1:Ny
+        Jyz[1:end, i, 1:end, i] = X
+    end
+    OrderZ = GetOrder(Z)
+    return z, Jzc -> (Chain(Jxz, Jzc, OrderZ), Chain(Jyz, Jzc, OrderZ))
+end
+push!(⬅DualedTens, :*)
 
-    Ṫy = Tensobian(spzeros(Float64, Mx, Ny, Mx, Nx), 2)
-    
-
-    # Compute Tensobian of Z with respect to y
-    Ṫzy = spzeros(Float64, Mx, Ny, Mx, Nx)
-
-
-
-    return z, Ṫz -> (TbChain(Ṫzx, Ṫz), TbChain(Ṫzy, Ṫz))
+function ⬅Dual(::typeof(+), X::AbstractArray, X::AbstractArray)
+    # TODO
 end
 push!(⬅DualedTens, :+)
 
 
-function ⬅Dual(::typeof(cos), x::AbstractArray, y::AbstractArray)
-    z = cos(x)
-    ∂z∂x = -sin(x)
-    return z, ∂l∂z -> ∂l∂z*∂z∂x
+function ⬅Dual(::typeof(ReLU), X::AbstractArray)
+    Z = ReLU(X)
+    Jxz = spzeros(Float64, Mx, Nx, Mx, Nx)
+    for (i, j) in zip(1:Mx, 1:Nx)
+        if X[i, j] > 0 
+            Jxz[i, i, i, j] = X[i, j]
+        end
+    end
+    return Z, Jzc -> Chain(Jxz, Jzc, GetOrder(Z))
 end
-push!(⬅DualedTens, :cos)
+push!(⬅DualedTens, :ReLU)
+
+
+function ⬅Dual(::typeof(map), f::Function, X::AbstractArray)
+    # TODO
+end
+
+function 
+
+
 
