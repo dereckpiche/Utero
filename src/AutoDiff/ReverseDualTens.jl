@@ -1,4 +1,4 @@
-⬅DualedTens = []
+ ⬅DualedTens = []
 
 """
     Chain(Jxy, Jyz)
@@ -50,15 +50,16 @@ function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
 end
 push!(⬅DualedTens, :*)
 
-function ⬅Dual(::typeof(+), X::AbstractArray, X::AbstractArray)
+function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
     # TODO
 end
 push!(⬅DualedTens, :+)
 
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
+    # TODO: not just for matrix
     Z = ReLU(X)
-    Jxz = spzeros(Float64, Mx, Nx, Mx, Nx)
+    Jxz = spzeros(Float64, size(X)..., size(X)...)
     for (i, j) in zip(1:Mx, 1:Nx)
         if X[i, j] > 0 
             Jxz[i, i, i, j] = X[i, j]
@@ -73,7 +74,6 @@ function ⬅Dual(::typeof(map), f::Function, X::AbstractArray)
     # TODO
 end
 
-function 
 
 
 

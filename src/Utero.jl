@@ -20,9 +20,12 @@ import Base.promote_rule
 
 include("Utils/ArrayUtils.jl")
 
-include("AutoDiffByDual/ReverseDual.jl")
-include("AutoDiffByDual/ReverseOL.jl")
-include("AutoDiffByDual/ReverseModeAD.jl")
+include("Functionnal/Activations.jl")
+
+include("AutoDiff/ReverseDualReal.jl")
+include("AutoDiff/ReverseDualTens.jl")
+include("AutoDiff/ReverseOL.jl")
+include("AutoDiff/ReverseModeAD.jl")
 
 """
 include("AutoDiffTracker/DirectedAcyclicGraph.jl")
