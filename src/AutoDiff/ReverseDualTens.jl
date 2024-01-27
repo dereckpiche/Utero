@@ -64,7 +64,7 @@ function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
     OrderZ = GetOrder(Z)
     return Z, Jzc -> (Chain(Jxz, Jzc, OrderZ), Chain(Jyz, Jzc, OrderZ))
 end
-@⬅OloadBinaryF Base.:*
+@⬅BinaryFunctionOL Base.:*
 
 
 function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
@@ -86,7 +86,7 @@ function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
     OrderZ = GetOrder(Z)
     return Z, Jzc -> (Chain(Jxz, Jzc, OrderZ), Chain(Jyz, Jzc, OrderZ))
 end
-@⬅OloadBinaryF Base.:+
+@⬅BinaryFunctionOL Base.:+
 
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
@@ -98,7 +98,18 @@ function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     end
     return Z, Jzc -> Chain(Jxz, Jzc, GetOrder(Z))
 end
-@⬅OloadUnaryF ReLU 
+@⬅UnaryFunctionOL ReLU 
+
+function ⬅Dual(::typeof(Sigmoid), X::AbstractArray)
+    Z = ReLU(X)
+    xshape = size(X)
+    Jxz = zeros(Float64, size(X)..., size(X)...)
+    for xinds in zip(map(k -> 1:k, xshape)...)
+        Jxz[xinds..., xinds...] = Sigmoid(X[xinds...])*(1 - Sigmoid(X[xinds...]))
+    end
+    return Z, Jzc -> Chain(Jxz, Jzc, GetOrder(Z))
+end
+@⬅UnaryFunctionOL Sigmoid
 
 function ⬅Dual(::typeof(map), f::Function, X::AbstractArray)
     # TODO

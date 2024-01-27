@@ -21,7 +21,7 @@ import Base.promote_rule
 include("Utils/ArrayUtils.jl")
 
 include("Functionnal/Activations.jl")
-export ReLU
+export ReLU, Sigmoid
 
 include("AutoDiff/ReverseOverloadingUtils.jl")
 include("AutoDiff/ReverseDualReal.jl")

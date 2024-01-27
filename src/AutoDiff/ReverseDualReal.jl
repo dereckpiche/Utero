@@ -11,7 +11,7 @@ function ⬅Dual(::typeof(+), x::Real, y::Real)
     ∂z∂y = 1
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅OlBinScalF Base.:+
+@⬅BinaryScalarFunctionOL Base.:+
 
 function ⬅Dual(::typeof(-), x::Real, y::Real)
     z = x - y
@@ -19,7 +19,7 @@ function ⬅Dual(::typeof(-), x::Real, y::Real)
     ∂z∂y = -1
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅OlBinScalF Base.:-
+@⬅BinaryScalarFunctionOL Base.:-
 
 function ⬅Dual(::typeof(*), x::Real, y::Real)
     z = x * y
@@ -27,7 +27,7 @@ function ⬅Dual(::typeof(*), x::Real, y::Real)
     ∂z∂y = x
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅OlBinScalF Base.:*
+@⬅BinaryScalarFunctionOL Base.:*
 
 
 function ⬅Dual(::typeof(/), x::Real, y::Real)
@@ -36,7 +36,7 @@ function ⬅Dual(::typeof(/), x::Real, y::Real)
     ∂z∂y = -x/y^2
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅OlBinScalF Base.:/
+@⬅BinaryScalarFunctionOL Base.:/
 
 
 function ⬅Dual(::typeof(^), x::Real, y::Real)
@@ -45,7 +45,7 @@ function ⬅Dual(::typeof(^), x::Real, y::Real)
     ∂z∂y = log(x) * x^y 
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅OlBinScalF Base.:^
+@⬅BinaryScalarFunctionOL Base.:^
 
 
 function ⬅Dual(::typeof(sin), x::Real)
@@ -53,14 +53,14 @@ function ⬅Dual(::typeof(sin), x::Real)
     ∂z∂x = cos(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
-@⬅OlUnaScalF Base.:sin
+@⬅UnaryScalarFunctionOL Base.:sin
 
 function ⬅Dual(::typeof(cos), x::Real)
     z = cos(x)
     ∂z∂x = -sin(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
-@⬅OlUnaScalF Base.:cos
+@⬅UnaryScalarFunctionOL Base.:cos
 
 
 

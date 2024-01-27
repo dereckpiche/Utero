@@ -42,7 +42,7 @@ The following set of Macro is to help quickly overload functions
 with simple arguments (Unary) or (Binary)
 """
 
-macro ⬅OlUnaScalF(func)
+macro ⬅UnaryScalarFunctionOL(func)
     return :(
         function $func(x::⬅Tracker{T}) where T<:Number
             (z, Chainer) = ⬅Dual($func, x.val)
@@ -56,7 +56,7 @@ macro ⬅OlUnaScalF(func)
 end
 
 
-macro ⬅OlBinScalF(func)
+macro ⬅BinaryScalarFunctionOL(func)
     return :(
             function $func(x::⬅Tracker{T}, y::⬅Tracker{G}) where {T<:Number, G<:Number}
                 z, Chainer = ⬅Dual($func, x.val, y.val)
@@ -90,7 +90,7 @@ macro ⬅OlBinScalF(func)
 end
 
 
-macro ⬅OloadUnaryF(func)
+macro ⬅UnaryFunctionOL(func)
     return :(
         function $func(X::⬅Tracker{T}) where T
             (z, Chainer) = ⬅Dual($func, X.val)
@@ -104,7 +104,7 @@ macro ⬅OloadUnaryF(func)
 end
 
 
-macro ⬅OloadBinaryF(func)
+macro ⬅BinaryFunctionOL(func)
     return :(
         function $func(x::⬅Tracker, y::⬅Tracker) 
             z, Chainer = ⬅Dual($func, x.val, y.val)

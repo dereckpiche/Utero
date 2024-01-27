@@ -6,14 +6,14 @@ function ReLU(X)
     return max.(0, X)
 end
 
-function sigmoid(v)
-    return Base.prec_assignment
+Sigmoid(x::Real) = 1 / (1 + exp(1)^(-x))
+
+function Sigmoid(X::AbstractArray)
+    return map(x -> 1 / (1 + exp(1)^(-x)), X)
 end
 
 function Softmax(v::Vector)
     return
 end
     
-function Softmax(m::Matrix, axis)
-    return
-end
+
