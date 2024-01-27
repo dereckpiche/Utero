@@ -42,6 +42,7 @@ function ForwardBackward(ctx::⬅Context, f::Function, X...)
     global Counter = ctx.Counter
 
     # Forward Pass
+    
     y = f(X...)
 
     # Backward Pass
@@ -52,3 +53,5 @@ function ForwardBackward(ctx::⬅Context, f::Function, X...)
     end
     return (y.val, Jacobians(ctx))
 end
+
+

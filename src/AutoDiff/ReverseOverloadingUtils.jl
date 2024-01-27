@@ -44,8 +44,8 @@ with simple arguments (Unary) or (Binary)
 
 macro ⬅OlUnaScalF(func)
     return :(
-        function $f(x::⬅Tracker{T}) where T<:Number
-            (z, Chainer) = ⬅Dual($f, x.val)
+        function $func(x::⬅Tracker{T}) where T<:Number
+            (z, Chainer) = ⬅Dual($func, x.val)
             z = ⬅Tracker(z)
             push!(x.Chainers, ∇ -> Chainer(∇))
             push!(x.Childs, z.id)
@@ -56,48 +56,48 @@ macro ⬅OlUnaScalF(func)
 end
 
 
-macro ⬅OlBinScalF(func)w
-    return quote
-        function func(x::⬅Tracker{T}, y::⬅Tracker{T}) where T<:Number
-            z, Chainer = ⬅Dual($f, x.val, y.val)
-            z = ⬅Tracker(z)
-            for (s, i) in [(x, 1), (y, 2)]
-                push!(s.Chainers, ∇ -> Chainer(∇)[i])
-                push!(s.Childs, z.id)
-                push!(Tape, s)
+macro ⬅OlBinScalF(func)
+    return :(
+            function $func(x::⬅Tracker{T}, y::⬅Tracker{G}) where {T<:Number, G<:Number}
+                z, Chainer = ⬅Dual($func, x.val, y.val)
+                z = ⬅Tracker(z)
+                for (s, i) in [(x, 1), (y, 2)]
+                    push!(s.Chainers, ∇ -> Chainer(∇)[i])
+                    push!(s.Childs, z.id)
+                    push!(Tape, s)
+                end
+                return z
+            end,
+
+            function $func(x::⬅Tracker{T}, y::Number) where T<:Number
+                z, Chainer = ⬅Dual($func, x.val, y)
+                z = ⬅Tracker(z)
+                push!(x.Chainers, ∇ -> Chainer(∇)[1])
+                push!(x.Childs, z.id)
+                push!(Tape, x)
+                return z
+            end,
+
+            function $func(x::Number, y::⬅Tracker{T}) where T<:Number
+                z, Chainer = ⬅Dual($func, x, y.val)
+                z = ⬅Tracker(z)
+                push!(y.Chainers, ∇ -> Chainer(∇)[2])
+                push!(y.Childs, z.id)
+                push!(Tape, y)
+                return z
             end
-            return z
-        end
-
-        function func(x::⬅Tracker{T}, y::Number) where T<:Number
-            z, Chainer = ⬅Dual($f, x.val, y)
-            z = ⬅Tracker(z)
-            push!(x.Chainers, ∇ -> Chainer(∇)[1])
-            push!(x.Childs, z.id)
-            push!(Tape, x)
-            return z
-        end
-
-        function func(x::Number, y::⬅Tracker{T}) where T<:Number
-            z, Chainer = ⬅Dual($f, x, y.val)
-            z = ⬅Tracker(z)
-            push!(y.Chainers, ∇ -> Chainer(∇)[2])
-            push!(y.Childs, z.id)
-            push!(Tape, y)
-            return z
-        end
-    end
+    )
 end
 
 
 macro ⬅OloadUnaryF(func)
     return :(
-        function $f(x::⬅Tracker{T}) 
-            (z, Chainer) = ⬅Dual($f, x.val)
+        function $func(X::⬅Tracker{T}) where T
+            (z, Chainer) = ⬅Dual($func, X.val)
             z = ⬅Tracker(z)
-            push!(x.Chainers, ∇ -> Chainer(∇))
-            push!(x.Childs, z.id)
-            push!(Tape, x)
+            push!(X.Chainers, ∇ -> Chainer(∇))
+            push!(X.Childs, z.id)
+            push!(Tape, X)
             return z
         end
     )
@@ -105,9 +105,9 @@ end
 
 
 macro ⬅OloadBinaryF(func)
-    return quote
-        function func(x::⬅Tracker{T}, y::⬅Tracker{T})
-            z, Chainer = ⬅Dual($f, x.val, y.val)
+    return :(
+        function $func(x::⬅Tracker, y::⬅Tracker) 
+            z, Chainer = ⬅Dual($func, x.val, y.val)
             z = ⬅Tracker(z)
             for (s, i) in [(x, 1), (y, 2)]
                 push!(s.Chainers, ∇ -> Chainer(∇)[i])
@@ -115,34 +115,26 @@ macro ⬅OloadBinaryF(func)
                 push!(Tape, s)
             end
             return z
-        end
+        end,
 
-        function func(x::⬅Tracker{T}, y::Number)
-            z, Chainer = ⬅Dual($f, x.val, y)
+        function $func(x::⬅Tracker, y::G) where {T, G<:Union{AbstractArray, Number}}
+            z, Chainer = ⬅Dual($func, x.val, y)
             z = ⬅Tracker(z)
             push!(x.Chainers, ∇ -> Chainer(∇)[1])
             push!(x.Childs, z.id)
             push!(Tape, x)
             return z
-        end
+        end,
 
-        function func(x::Number, y::⬅Tracker{T})
-            z, Chainer = ⬅Dual($f, x, y.val)
+        function $func(x::G, y::⬅Tracker) where {T, G<:Union{AbstractArray, Number}}
+            z, Chainer = ⬅Dual($func, x, y.val)
             z = ⬅Tracker(z)
             push!(y.Chainers, ∇ -> Chainer(∇)[2])
             push!(y.Childs, z.id)
             push!(Tape, y)
             return z
         end
-    end
+    )
 end
 
-
-
-
-
-    Base.$f(x::⬅Tracker, y::Real) = Base.$f(x, ⬅Tracker(y))
-    Base.$f(x::Real, y::⬅Tracker) = Base.$f(⬅Tracker(x), y)
-end
-end
 

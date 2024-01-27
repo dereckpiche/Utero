@@ -2,8 +2,8 @@
 Activation functions applied element-wise.
 """
 
-function ReLU(v)
-    return max.(0, v)
+function ReLU(X)
+    return max.(0, X)
 end
 
 function sigmoid(v)
