@@ -8,13 +8,13 @@ GetOrder(X::AbstractArray) = length(size(X))
 
 
 function Chain(Jxy::AbstractArray, Jyz::AbstractArray, OrderY::Int64)
-    xdims = size(Jxy)[OrderY+1,end]
-    ydims = size(Jxy)[1, OrderY]
-    zdims = size(Jyz)[1, GetOrder(Jyz)-OrderY]
-    J = zeros(zdims, xdims)
-    xIters = map(k -> 1:k, xdims)
-    yIters = map(k -> 1:k, ydims)
-    zIters = map(k -> 1:k, zdims)
+    xshape = size(Jxy)[OrderY+1,end]
+    yshape = size(Jxy)[1, OrderY]
+    zshape = size(Jyz)[1, GetOrder(Jyz)-OrderY]
+    J = zeros(zshape, xshape)
+    xIters = map(k -> 1:k, xshape)
+    yIters = map(k -> 1:k, yshape)
+    zIters = map(k -> 1:k, zshape)
     for (zindices, xindices) in zip(zip(zIters...), zip(xIters...))
         chainsum = 0.0
         for yindices in zip(yIters...)
@@ -48,27 +48,41 @@ function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
     OrderZ = GetOrder(Z)
     return z, Jzc -> (Chain(Jxz, Jzc, OrderZ), Chain(Jyz, Jzc, OrderZ))
 end
-push!(⬅DualedTens, :*)
+@⬅OloadBinaryF Base.:*
+
 
 function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
-    # TODO
+    Z = X + Y
+    shape = size(X)
+
+    # Compute Tensobian Jacobian of Z with respect to X
+    Jxz = spzeros(Float64, shape..., shape...)
+    for inds in zip(map(k -> 1:k, shape)...)
+        Jxz[inds..., inds...] = Y[inds]
+    end
+
+    # Compute Tensorial Jacobian of Z with respect to y
+    Jyz = spzeros(Float64, shape..., shape...)
+    for inds in zip(map(k -> 1:k, shape)...)
+        Jyz[inds..., inds...] = X[inds]
+    end
+
+    OrderZ = GetOrder(Z)
+    return z, Jzc -> (Chain(Jxz, Jzc, OrderZ), Chain(Jyz, Jzc, OrderZ))
 end
-push!(⬅DualedTens, :+)
+@⬅OloadBinaryF Base.:+
 
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
-    # TODO: not just for matrix
     Z = ReLU(X)
+    xshape = size(X)
     Jxz = spzeros(Float64, size(X)..., size(X)...)
-    for (i, j) in zip(1:Mx, 1:Nx)
-        if X[i, j] > 0 
-            Jxz[i, i, i, j] = X[i, j]
-        end
+    for xinds in zip(map(k -> 1:k, xshape)...)
+        X[xinds] > 0 ? Jx[xinds..., xinds...] = X[xinds] : nothing
     end
     return Z, Jzc -> Chain(Jxz, Jzc, GetOrder(Z))
 end
-push!(⬅DualedTens, :ReLU)
-
+@⬅OloadUnaryF ReLU 
 
 function ⬅Dual(::typeof(map), f::Function, X::AbstractArray)
     # TODO

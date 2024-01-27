@@ -92,23 +92,49 @@ end
 
 macro ⬅OloadUnaryF(func)
     return :(
-        function $f(x::⬅Tracker, y::⬅Tracker)
-            return ...
+        function $f(x::⬅Tracker{T}) 
+            (z, Chainer) = ⬅Dual($f, x.val)
+            z = ⬅Tracker(z)
+            push!(x.Chainers, ∇ -> Chainer(∇))
+            push!(x.Childs, z.id)
+            push!(Tape, x)
+            return z
         end
     )
-
-    # TODO: include speedups for non tracked args
 end
 
 
 macro ⬅OloadBinaryF(func)
-    return :(
-        function $f(x::⬅Tracker, y::⬅Tracker)
-            return ...
+    return quote
+        function func(x::⬅Tracker{T}, y::⬅Tracker{T})
+            z, Chainer = ⬅Dual($f, x.val, y.val)
+            z = ⬅Tracker(z)
+            for (s, i) in [(x, 1), (y, 2)]
+                push!(s.Chainers, ∇ -> Chainer(∇)[i])
+                push!(s.Childs, z.id)
+                push!(Tape, s)
+            end
+            return z
         end
-    )
 
-    # TODO: include speedups for non tracked args
+        function func(x::⬅Tracker{T}, y::Number)
+            z, Chainer = ⬅Dual($f, x.val, y)
+            z = ⬅Tracker(z)
+            push!(x.Chainers, ∇ -> Chainer(∇)[1])
+            push!(x.Childs, z.id)
+            push!(Tape, x)
+            return z
+        end
+
+        function func(x::Number, y::⬅Tracker{T})
+            z, Chainer = ⬅Dual($f, x, y.val)
+            z = ⬅Tracker(z)
+            push!(y.Chainers, ∇ -> Chainer(∇)[2])
+            push!(y.Childs, z.id)
+            push!(Tape, y)
+            return z
+        end
+    end
 end
 
 
