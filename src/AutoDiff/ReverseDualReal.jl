@@ -1,5 +1,3 @@
-⬅DualedReal = []
-
 """
     ⬅Dual(::typeof(f), x1::Real, x2::Real, ...)
 "⬅" stands for "reverse mode"
@@ -13,7 +11,7 @@ function ⬅Dual(::typeof(+), x::Real, y::Real)
     ∂z∂y = 1
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-push!(⬅DualedReal, :+)
+@⬅OlBinScalF Base.:+
 
 function ⬅Dual(::typeof(-), x::Real, y::Real)
     z = x - y
@@ -21,7 +19,7 @@ function ⬅Dual(::typeof(-), x::Real, y::Real)
     ∂z∂y = -1
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-push!(⬅DualedReal, :-)
+@⬅OlBinScalF Base.:-
 
 function ⬅Dual(::typeof(*), x::Real, y::Real)
     z = x * y
@@ -29,7 +27,8 @@ function ⬅Dual(::typeof(*), x::Real, y::Real)
     ∂z∂y = x
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-push!(⬅DualedReal, :*)
+@⬅OlBinScalF Base.:*
+
 
 function ⬅Dual(::typeof(/), x::Real, y::Real)
     z = x * y
@@ -37,7 +36,8 @@ function ⬅Dual(::typeof(/), x::Real, y::Real)
     ∂z∂y = -x/y^2
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-push!(⬅DualedReal, :/)
+@⬅OlBinScalF Base.:/
+
 
 function ⬅Dual(::typeof(^), x::Real, y::Real)
     z = x^y
@@ -45,21 +45,22 @@ function ⬅Dual(::typeof(^), x::Real, y::Real)
     ∂z∂y = log(x) * x^y 
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-push!(⬅DualedReal, :^)
+@⬅OlBinScalF Base.:^
+
 
 function ⬅Dual(::typeof(sin), x::Real)
     z = sin(x)
     ∂z∂x = cos(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
-push!(⬅DualedReal, :sin)
+@⬅OlUnaScalF Base.:sin
 
 function ⬅Dual(::typeof(cos), x::Real)
     z = cos(x)
     ∂z∂x = -sin(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
-push!(⬅DualedReal, :cos)
+@⬅OlUnaScalF Base.:cos
 
 
 

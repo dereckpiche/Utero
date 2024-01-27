@@ -14,8 +14,6 @@ function Params(ctx::⬅Context, X...)
     return ps
 end
 
-
-
 function Jacobians(ctx::⬅Context)
     grads = []
     for p in ctx.Params 
