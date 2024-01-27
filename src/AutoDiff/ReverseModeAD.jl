@@ -1,3 +1,7 @@
+"""
+TODO: add "!" for side effects
+"""
+
 function Params(ctx::⬅Context, x::Real)
     x = ⬅Tracker(ctx, x)
     push!(ctx.Params, x.id)
@@ -27,7 +31,7 @@ function ⬅ChainStep(ctx::⬅Context, x::⬅Tracker)
     if !isempty(x.Chainers)
         l = pop!(x.Chainers)
         p = pop!(x.Childs)
-        g = l(getindex(ctx.Jacobians, p))
+        g = l(get(ctx.Jacobians, p, 0))
     end
     if haskey(ctx.Jacobians, x.id)
         ctx.Jacobians[x.id] += g
@@ -42,7 +46,7 @@ function ForwardBackward(ctx::⬅Context, f::Function, X...)
     global Counter = ctx.Counter
 
     # Forward Pass
-    
+
     y = f(X...)
 
     # Backward Pass

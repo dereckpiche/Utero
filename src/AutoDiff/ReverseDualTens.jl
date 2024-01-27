@@ -28,6 +28,7 @@ function Chain(Jxy::AbstractArray, Jyz::AbstractArray, OrderY::Int64)
         end
         J[zindices..., xindices...] = chainsum
     end
+    return J
 end
 
 function Chain(Jxy::AbstractArray, Jyz::Real, OrderY::Int64)
