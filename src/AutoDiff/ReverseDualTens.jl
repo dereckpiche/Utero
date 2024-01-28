@@ -1,20 +1,25 @@
-""" TODOS
-- Use Sparse Arrays
-- Dont use arrays where not needed, 
-simply use the linker.
+"""
+================================================================
+    ReverseDualTens.jl
+
+PURPOSE:
+Compute the reverse dual of basic functions.
+
+
+
+
+TODOs:
+- Include sparse arrays
+================================================================
 """
 
 
 
 """
     Chain(Jyx, Jzy)
-Apply the chain rule for two Jacobians.
+Apply the chain rule for two Tensorial Jacobians of arbitrary order.
 """
-GetOrder(X::AbstractArray) = length(size(X))
-
-
 function Chain(Jyx::AbstractArray, Jzy::AbstractArray, OrderY::Int64)
-    # TODO: fix
     xshape = size(Jyx)[OrderY+1:end]
     yshape = size(Jyx)[1:OrderY]
     zshape = size(Jzy)[1:GetOrder(Jzy)-OrderY]
@@ -32,16 +37,10 @@ function Chain(Jyx::AbstractArray, Jzy::AbstractArray, OrderY::Int64)
     return J
 end
 
-function Chain(Jyx::AbstractArray, Jzy::Real, OrderY::Int64)
-    return Jyx * Jzy
-end
-#Chain(Jyx::Any, Jzy::Nothing, OrderY::Int64) = nothing
-#Chain(Jyx::Nothing, Jzy::Any, OrderY::Int64) = nothing
-
+Chain(Jyx::AbstractArray, Jzy::Real, OrderY::Int64) = Jyx * Jzy
 Chain(Jyx::Real, Jzy::AbstractArray, OrderY::Int64) = Jyx * Jzy
 
 
-GetOrder(X::AbstractArray) = length(size(X))
 
 """
     ⬅Dual(::typeof(f), x1::AbstractArray, x2::AbstractArray, ...)
@@ -49,74 +48,75 @@ On the left, return the result of the operation.
 With z = f(x1, x2, ...), on the right, return the 
 'Chainer" function: ``Ṫ(Z) -> Ṫ(X1), Ṫ(X2), ...``
 """
-function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
-    # TODO: fix
-    Z = X * Y
-    (Mx, Nx) = size(X); (My, Ny) = size(Y)
-    # Compute Tensobian Jacobian of Z with respect to X
-    Jzx = zeros(Float64, Mx, Ny, Mx, Nx)
-    for i in 1:Mx
-        Jzx[i, 1:end, i, 1:end] = Y
-    end
-    # Compute Tensorial Jacobian of Z with respect to y
-    Jzy = zeros(Float64, Mx, Ny, My, Ny)
-    for i in 1:Ny
-        Jzy[1:end, i, 1:end, i] = X
-    end
-    OrderZ = GetOrder(Z)
-    return Z, Jcz -> (Chain(Jzx, Jcz, OrderZ), Chain(Jzy, Jcz, OrderZ))
+
+# ================================
+# Element-Wise
+# ================================
+
+function ⬅Dual(::typeof(.+), X::AbstractArray, Y::AbstractArray)
+    Z = X .+ Y
+    return Z, ∇z -> (∇z, ∇z)
 end
-@⬅BinaryFunctionOL Base.:*
+@⬅BinaryFunctionOL Base.:.+
 
 
-function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
-    Z = X + Y
-    shape = size(X)
-
-    # Compute Tensobian Jacobian of Z with respect to X
-    Jzx = zeros(Float64, shape..., shape...)
-    for inds in Base.product(map(k -> 1:k, shape)...)
-        Jzx[inds..., inds...] = Y[inds...]
-    end
-
-    # Compute Tensorial Jacobian of Z with respect to y
-    Jzy = zeros(Float64, shape..., shape...)
-    for inds in Base.product(map(k -> 1:k, shape)...)
-        Jzy[inds..., inds...] = X[inds...]
-    end
-
-    OrderZ = GetOrder(Z)
-    return Z, Jcz -> (Chain(Jzx, Jcz, OrderZ), Chain(Jzy, Jcz, OrderZ))
+function ⬅Dual(::typeof(.-), X::AbstractArray, Y::AbstractArray)
+    Z = X .- Y
+    return Z, ∇z -> (∇z, .-∇z)
 end
-@⬅BinaryFunctionOL Base.:+
+@⬅BinaryFunctionOL Base.:.-
+
+
+function ⬅Dual(::typeof(.*), X::AbstractArray, Y::AbstractArray)
+    Z = X .* Y
+    return Z, ∇z -> (∇z .* Y, ∇z .* X)
+end
+@⬅BinaryFunctionOL Base.:.*
+
+
+function ⬅Dual(::typeof(./), X::AbstractArray, Y::AbstractArray)
+    Z = X ./ Y
+    return Z, ∇z -> (∇z ./ Y, ∇z .* X) # TODO
+end
+@⬅BinaryFunctionOL Base.:./
 
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     Z = ReLU(X)
-    xshape = size(X)
-    Jzx = zeros(Float64, size(X)..., size(X)...)
-    for xinds in Base.product(map(k -> 1:k, xshape)...)
-        X[xinds...] > 0 ? Jzx[xinds..., xinds...] = X[xinds...] : nothing
-    end
-    return Z, Jcz -> Chain(Jzx, Jcz, GetOrder(Z))
+    return Z, ∇z -> ∇z .* map(x -> x > 0 ? x : 0, X)
 end
 @⬅UnaryFunctionOL ReLU 
 
+
 function ⬅Dual(::typeof(Sigmoid), X::AbstractArray)
-    Z = ReLU(X)
-    xshape = size(X)
-    Jzx = zeros(Float64, size(X)..., size(X)...)
-    for xinds in Base.product(map(k -> 1:k, xshape)...)
-        Jzx[xinds..., xinds...] = Sigmoid(X[xinds...])*(1 - Sigmoid(X[xinds...]))
-    end
-    return Z, Jcz -> Chain(Jzx, Jcz, GetOrder(Z))
+    Z = Sigmoid(X)
+    return Z, ∇z -> ∇z .* map(x -> Sigmoid(x)*(1- Sigmoid(x)), X)
 end
 @⬅UnaryFunctionOL Sigmoid
+
 
 function ⬅Dual(::typeof(map), f::Function, X::AbstractArray)
     # TODO
 end
 
 
+# ================================
+# Linear Algebra
+# ================================
+
+function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
+    Z = X * Y
+    return Z, ∇z -> (∇z * Y', TODO)
+end
+@⬅BinaryFunctionOL Base.:*
 
 
+
+# ================================
+# Restructuring
+# ================================
+
+function ⬅Dual(::typeof(sum), X::AbstractMatrix, ::1)
+    Z = sum(X, Dims=1)
+    return Z, ∇z -> (∇z * Y', TODO)
+end

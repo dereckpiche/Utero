@@ -44,20 +44,38 @@ $$
 $$
 where $\sum_{}$ is an abbreviation of $$. We can also use Einstein summation notation for an implicit sum:
 
-## Tensorial Jacobian of Matrix Multiplication
-Let $f(X) = X \times Y$. Then $f: \mathbb{R}^{M_x \times N_x} \to \mathbb{R}^{M_x \times N_Y}$. 
-We have $$f(X)_{i, j} = \sum_k X_{i, k} Y_{k, j}$$ Thus,
-$$\frac{\partial f(X)_{i,j}}{\partial X_{s, t}} = 
+## Gradient of Matrix Multiplication
+
+Let $F(X) = X \times Y$. Then $F: \mathbb{R}^{m_x \times n_x} \to \mathbb{R}^{m_x \times n_y}$
+Let $G : \mathbb{R}^{m_x \times n_y} \to \mathbb{R}$.
+Let $H := G \circ F$. We want to find $\nabla_H$ knowing $\nabla_G$.  
+We have $$F(X)_{p, q} = \sum_k X_{p, k} Y_{k, q}$$ 
+Thus,
+$$
+\left[ \nabla_F \right]^{p, q}_{i, j}
+= 
 \begin{cases}
-Y_{j, t} & \text{if $s = i$} \\
+Y_{j, q} & \text{if $p = i$} \\
 0 & \text{else}
 \end{cases}$$
-Let $f(Y) = X \times Y$. Then $f: \mathbb{R}^{M_y \times N_y} \to \mathbb{R}^{M_x \times N_Y}$
-Thus, 
-$$\frac{\partial f(Y)_{i,j}}{\partial Y_{s, t}} = 
-\begin{cases}
-X_{i, s} & \text{if $t = j$} \\
-0 & \text{else}
-\end{cases}$$
+
+Then
+$$\begin{align}
+    \left[ \nabla_H \right]_{i, j}
+    =
+    \sum_p \sum_q \left[ \nabla_G \right]_{p, q} \left[ \nabla_F \right]^{p, q}_{i, j}
+    =
+    \sum_q \left[ \nabla_G \right]_{i,q} Y_{j, q}
+    =
+    \sum_q \left[ \nabla_G \right]_{i,q} Y^\top_{q, j}
+\end{align}$$
+Thus,
+$$ \nabla_H = \nabla_G \times Y^\top $$
+
+
+
+
+
+
 
 

@@ -31,7 +31,7 @@ end
 
 
 function ⬅Dual(::typeof(/), x::Real, y::Real)
-    z = x * y
+    z = x / y
     ∂z∂x = y
     ∂z∂y = -x/y^2
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
