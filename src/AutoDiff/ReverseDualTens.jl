@@ -7,37 +7,38 @@ simply use the linker.
 
 
 """
-    Chain(Jxy, Jyz)
+    Chain(Jyx, Jzy)
 Apply the chain rule for two Jacobians.
 """
 GetOrder(X::AbstractArray) = length(size(X))
 
 
-function Chain(Jxy::AbstractArray, Jyz::AbstractArray, OrderY::Int64)
-    xshape = size(Jxy)[OrderY+1:end]
-    yshape = size(Jxy)[1:OrderY]
-    zshape = size(Jyz)[1:GetOrder(Jyz)-OrderY]
+function Chain(Jyx::AbstractArray, Jzy::AbstractArray, OrderY::Int64)
+    # TODO: fix
+    xshape = size(Jyx)[OrderY+1:end]
+    yshape = size(Jyx)[1:OrderY]
+    zshape = size(Jzy)[1:GetOrder(Jzy)-OrderY]
     J = zeros(zshape..., xshape...)
     xIters = map(k -> 1:k, xshape)
     yIters = map(k -> 1:k, yshape)
     zIters = map(k -> 1:k, zshape)
-    for (zindices, xindices) in zip(zip(zIters...), zip(xIters...))
+    for (zindices, xindices) in Base.product(Base.product(zIters...), Base.product(xIters...))
         chainsum = 0.0
-        for yindices in zip(yIters...)
-            chainsum += Jxy[yindices..., xindices...] * Jyz[zindices..., yindices...]
+        for yindices in Base.product(yIters...)
+            chainsum += Jyx[yindices..., xindices...] * Jzy[zindices..., yindices...]
         end
         J[zindices..., xindices...] = chainsum
     end
     return J
 end
 
-function Chain(Jxy::AbstractArray, Jyz::Real, OrderY::Int64)
-    return Jxy * Jyz
+function Chain(Jyx::AbstractArray, Jzy::Real, OrderY::Int64)
+    return Jyx * Jzy
 end
-#Chain(Jxy::Any, Jyz::Nothing, OrderY::Int64) = nothing
-#Chain(Jxy::Nothing, Jyz::Any, OrderY::Int64) = nothing
+#Chain(Jyx::Any, Jzy::Nothing, OrderY::Int64) = nothing
+#Chain(Jyx::Nothing, Jzy::Any, OrderY::Int64) = nothing
 
-Chain(Jxy::Real, Jyz::AbstractArray, OrderY::Int64) = Jxy * Jyz
+Chain(Jyx::Real, Jzy::AbstractArray, OrderY::Int64) = Jyx * Jzy
 
 
 GetOrder(X::AbstractArray) = length(size(X))
@@ -49,20 +50,21 @@ With z = f(x1, x2, ...), on the right, return the
 'Chainer" function: ``Ṫ(Z) -> Ṫ(X1), Ṫ(X2), ...``
 """
 function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
+    # TODO: fix
     Z = X * Y
     (Mx, Nx) = size(X); (My, Ny) = size(Y)
     # Compute Tensobian Jacobian of Z with respect to X
-    Jxz = zeros(Float64, Mx, Ny, Mx, Nx)
+    Jzx = zeros(Float64, Mx, Ny, Mx, Nx)
     for i in 1:Mx
-        Jxz[i, 1:end, i, 1:end] = Y
+        Jzx[i, 1:end, i, 1:end] = Y
     end
     # Compute Tensorial Jacobian of Z with respect to y
-    Jyz = zeros(Float64, Mx, Ny, My, Ny)
+    Jzy = zeros(Float64, Mx, Ny, My, Ny)
     for i in 1:Ny
-        Jyz[1:end, i, 1:end, i] = X
+        Jzy[1:end, i, 1:end, i] = X
     end
     OrderZ = GetOrder(Z)
-    return Z, Jzc -> (Chain(Jxz, Jzc, OrderZ), Chain(Jyz, Jzc, OrderZ))
+    return Z, Jcz -> (Chain(Jzx, Jcz, OrderZ), Chain(Jzy, Jcz, OrderZ))
 end
 @⬅BinaryFunctionOL Base.:*
 
@@ -72,19 +74,19 @@ function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
     shape = size(X)
 
     # Compute Tensobian Jacobian of Z with respect to X
-    Jxz = zeros(Float64, shape..., shape...)
-    for inds in zip(map(k -> 1:k, shape)...)
-        Jxz[inds..., inds...] = Y[inds...]
+    Jzx = zeros(Float64, shape..., shape...)
+    for inds in Base.product(map(k -> 1:k, shape)...)
+        Jzx[inds..., inds...] = Y[inds...]
     end
 
     # Compute Tensorial Jacobian of Z with respect to y
-    Jyz = zeros(Float64, shape..., shape...)
-    for inds in zip(map(k -> 1:k, shape)...)
-        Jyz[inds..., inds...] = X[inds...]
+    Jzy = zeros(Float64, shape..., shape...)
+    for inds in Base.product(map(k -> 1:k, shape)...)
+        Jzy[inds..., inds...] = X[inds...]
     end
 
     OrderZ = GetOrder(Z)
-    return Z, Jzc -> (Chain(Jxz, Jzc, OrderZ), Chain(Jyz, Jzc, OrderZ))
+    return Z, Jcz -> (Chain(Jzx, Jcz, OrderZ), Chain(Jzy, Jcz, OrderZ))
 end
 @⬅BinaryFunctionOL Base.:+
 
@@ -92,22 +94,22 @@ end
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     Z = ReLU(X)
     xshape = size(X)
-    Jxz = zeros(Float64, size(X)..., size(X)...)
-    for xinds in zip(map(k -> 1:k, xshape)...)
-        X[xinds...] > 0 ? Jxz[xinds..., xinds...] = X[xinds...] : nothing
+    Jzx = zeros(Float64, size(X)..., size(X)...)
+    for xinds in Base.product(map(k -> 1:k, xshape)...)
+        X[xinds...] > 0 ? Jzx[xinds..., xinds...] = X[xinds...] : nothing
     end
-    return Z, Jzc -> Chain(Jxz, Jzc, GetOrder(Z))
+    return Z, Jcz -> Chain(Jzx, Jcz, GetOrder(Z))
 end
 @⬅UnaryFunctionOL ReLU 
 
 function ⬅Dual(::typeof(Sigmoid), X::AbstractArray)
     Z = ReLU(X)
     xshape = size(X)
-    Jxz = zeros(Float64, size(X)..., size(X)...)
-    for xinds in zip(map(k -> 1:k, xshape)...)
-        Jxz[xinds..., xinds...] = Sigmoid(X[xinds...])*(1 - Sigmoid(X[xinds...]))
+    Jzx = zeros(Float64, size(X)..., size(X)...)
+    for xinds in Base.product(map(k -> 1:k, xshape)...)
+        Jzx[xinds..., xinds...] = Sigmoid(X[xinds...])*(1 - Sigmoid(X[xinds...]))
     end
-    return Z, Jzc -> Chain(Jxz, Jzc, GetOrder(Z))
+    return Z, Jcz -> Chain(Jzx, Jcz, GetOrder(Z))
 end
 @⬅UnaryFunctionOL Sigmoid
 
