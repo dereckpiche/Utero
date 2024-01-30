@@ -53,32 +53,32 @@ With z = f(x1, x2, ...), on the right, return the
 # Element-Wise
 # ================================
 
-function ⬅Dual(::typeof(.+), X::AbstractArray, Y::AbstractArray)
-    Z = X .+ Y
+function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
+    Z = X + Y
     return Z, ∇z -> (∇z, ∇z)
 end
-@⬅BinaryFunctionOL Base.:.+
+@⬅BinaryFunctionOL Base.:+
 
 
-function ⬅Dual(::typeof(.-), X::AbstractArray, Y::AbstractArray)
-    Z = X .- Y
-    return Z, ∇z -> (∇z, .-∇z)
+function ⬅Dual(::typeof(-), X::AbstractArray, Y::AbstractArray)
+    Z = X - Y
+    return Z, ∇z -> (∇z, -∇z)
 end
-@⬅BinaryFunctionOL Base.:.-
+@⬅BinaryFunctionOL Base.:-
 
-
+"""
 function ⬅Dual(::typeof(.*), X::AbstractArray, Y::AbstractArray)
     Z = X .* Y
     return Z, ∇z -> (∇z .* Y, ∇z .* X)
 end
 @⬅BinaryFunctionOL Base.:.*
+"""
 
-
-function ⬅Dual(::typeof(./), X::AbstractArray, Y::AbstractArray)
-    Z = X ./ Y
-    return Z, ∇z -> (∇z ./ Y, ∇z .* X) # TODO
+function ⬅Dual(::typeof(/), X::AbstractArray, Y::AbstractArray)
+    Z = X / Y
+    return Z, ∇z -> (∇z / Y, ∇z .* X) # TODO
 end
-@⬅BinaryFunctionOL Base.:./
+@⬅BinaryFunctionOL Base.:/
 
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
@@ -104,9 +104,9 @@ end
 # Linear Algebra
 # ================================
 
-function ⬅Dual(::typeof(*), X::AbstractMatrix, Y::AbstractMatrix)
+function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
     Z = X * Y
-    return Z, ∇z -> (∇z * Y', TODO)
+    return Z, ∇z -> (∇z * Y', X' * ∇z)
 end
 @⬅BinaryFunctionOL Base.:*
 
@@ -115,8 +115,15 @@ end
 # ================================
 # Restructuring
 # ================================
+function ⬅Dual(::typeof(adjoint), X::AbstractArray)
+    return X', ∇z -> ∇z'
+end
+@⬅UnaryFunctionOL adjoint
 
-function ⬅Dual(::typeof(sum), X::AbstractMatrix, ::1)
+
+function ⬅Dual(::typeof(sum), X::AbstractMatrix, dim)
+    # TODO
     Z = sum(X, Dims=1)
     return Z, ∇z -> (∇z * Y', TODO)
 end
+

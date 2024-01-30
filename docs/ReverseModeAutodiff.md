@@ -53,13 +53,15 @@ We have $$F(X)_{p, q} = \sum_k X_{p, k} Y_{k, q}$$
 Thus,
 $$
 \left[ \nabla_F \right]^{p, q}_{i, j}
-= 
+:= 
+\frac{\partial H_{p, q}}{\partial X_{i, j}}
+=
 \begin{cases}
 Y_{j, q} & \text{if $p = i$} \\
 0 & \text{else}
 \end{cases}$$
 
-Then
+Using the chain rule, 
 $$\begin{align}
     \left[ \nabla_H \right]_{i, j}
     =
@@ -71,6 +73,18 @@ $$\begin{align}
 \end{align}$$
 Thus,
 $$ \nabla_H = \nabla_G \times Y^\top $$
+
+___
+Since
+$$X \times Y \equiv (Y^\top \times X^\top)^\top$$ 
+the gradient with respect to $Y$ is 
+$$\begin{align}
+    \nabla_H
+    =
+    (\nabla_G^\top \times (X^\top)^\top)^\top
+    =
+    X^\top \times \nabla_G
+\end{align}$$
 
 
 

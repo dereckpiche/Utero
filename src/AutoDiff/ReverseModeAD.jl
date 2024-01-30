@@ -1,47 +1,60 @@
 """
 TODO: add "!" for side effects
 """
+mutable struct ⬅Context
+    Params
+    Tape
+    Gradients::Dict
+    Counter
+    function ⬅Context()
+        return new([], [], Dict(), [0])
+    end
+end
 
-function Params(ctx::⬅Context, x::Real)
-    x = ⬅Tracker(ctx, x)
-    push!(ctx.Params, x.id)
+function ⬅CleanTape!(ctx)
+    ctx.Tape = []
+end
+
+function AddParams!(ctx::⬅Context, x::Real)
+    x = ⬅Tracker(x)
+    push!(ctx.Params, x)
     return x
 end
 
-function Params(ctx::⬅Context, X...)
+function AddParams!(ctx::⬅Context, X...)
     ps = []
     for x in X 
-        x = ⬅Tracker(ctx, x)
-        push!(ctx.Params, x.id)
+        x = ⬅Tracker(x)
+        push!(ctx.Params, x)
         push!(ps, x)
     end
     return ps
 end
 
-function Jacobians(ctx::⬅Context)
+function PluckParamGrads(ctx::⬅Context)
     grads = []
-    for p in ctx.Params 
-        push!(grads, ctx.Jacobians[p])
+    for p in ctx.Params
+        push!(grads, ctx.Gradients[p.id])
     end
     return grads
 end
 
-function ⬅ChainStep(ctx::⬅Context, x::⬅Tracker)
+function CumulChains!(ctx::⬅Context, x::⬅Tracker)
     g = 0.0
     if !isempty(x.Chainers)
         l = pop!(x.Chainers)
         p = pop!(x.Childs)
-        g = l(get(ctx.Jacobians, p, 0))
+        g = l(get(ctx.Gradients, p, 0))
     end
-    if haskey(ctx.Jacobians, x.id)
-        ctx.Jacobians[x.id] += g
+    if haskey(ctx.Gradients, x.id)
+        ctx.Gradients[x.id] += g
     else 
-        setindex!(ctx.Jacobians, g, x.id) 
+        setindex!(ctx.Gradients, g, x.id) 
     end 
     return g
 end
 
-function ForwardBackward(ctx::⬅Context, f::Function, X...)
+function ForwardBackward!(ctx::⬅Context, f::Function, X...)
     global Tape = ctx.Tape
     global Counter = ctx.Counter
 
@@ -50,12 +63,13 @@ function ForwardBackward(ctx::⬅Context, f::Function, X...)
     y = f(X...)
 
     # Backward Pass
-    setindex!(ctx.Jacobians, 1.0, y.id)
+    setindex!(ctx.Gradients, 1.0, y.id)
     push!(ctx.Tape, y)
     for z in reverse(ctx.Tape)
-        ⬅ChainStep(ctx, z)
+        CumulChains!(ctx, z)
     end
-    return (y.val, Jacobians(ctx))
+    ⬅CleanTape!(ctx)
+    return (y.val, PluckParamGrads(ctx))
 end
 
 

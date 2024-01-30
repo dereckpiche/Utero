@@ -1,37 +1,19 @@
-mutable struct ⬅Context
-    Params
-    Tape
-    Jacobians::Dict
-    Counter
-    function ⬅Context()
-        return new([], [], Dict(), [0])
-    end
-end
-
 mutable struct ⬅Tracker{T}
     val::T
-    id::Int64 
+    id::UUID
     Chainers
     Childs
     function ⬅Tracker(val) 
-        global Counter[1] += 1
-        id = Counter[1]
-        return new{typeof(val)}(val, id, [], [])
+        return new{typeof(val)}(val, uuid4(), [], [])
     end
-
-    function ⬅Tracker(ctx::⬅Context, val) 
-        ctx.Counter[1] += 1
-        return new{typeof(val)}(val, ctx.Counter[1], [], [])
-    end
-
     ⬅Tracker(x::⬅Tracker)  = x
-    ⬅Tracker(ctx, x::⬅Tracker)  = x
 end
 
+"""
 convert(::Type{⬅Tracker}, x::Real) = ⬅Tracker(x)
 convert(::Type{⬅Tracker}, x::Int) = ⬅Tracker(x)
 promote_rule(::Type{⬅Tracker}, ::Type{<:Number}) = ⬅Tracker
-
+"""
 
 function Untrack(X::⬅Tracker...)
     return [x.val for x in X]
@@ -117,7 +99,7 @@ macro ⬅BinaryFunctionOL(func)
             return z
         end,
 
-        function $func(x::⬅Tracker, y::G) where {T, G<:Union{AbstractArray, Number}}
+        function $func(x::⬅Tracker, y::G) where {G <: Union{Number, AbstractArray}}
             z, Chainer = ⬅Dual($func, x.val, y)
             z = ⬅Tracker(z)
             push!(x.Chainers, ∇ -> Chainer(∇)[1])
@@ -126,7 +108,7 @@ macro ⬅BinaryFunctionOL(func)
             return z
         end,
 
-        function $func(x::G, y::⬅Tracker) where {T, G<:Union{AbstractArray, Number}}
+        function $func(x::G, y::⬅Tracker) where {G <: Union{Number, AbstractArray}}
             z, Chainer = ⬅Dual($func, x, y.val)
             z = ⬅Tracker(z)
             push!(y.Chainers, ∇ -> Chainer(∇)[2])
