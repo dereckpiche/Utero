@@ -13,7 +13,7 @@ import Base.sin
 import Base.cos
 import Base.map
 import Base.prod
-import Base.sum, Base.adjoint
+import Base.sum, Base.adjoint, Base.getindex
 
 import Base.convert
 import Base.promote_rule

@@ -53,26 +53,26 @@ With z = f(x1, x2, ...), on the right, return the
 # Element-Wise
 # ================================
 
-function ⬅Dual(::typeof(+), X::AbstractArray, Y::AbstractArray)
+function ⬅Dual(::typeof(+), X, Y)
     Z = X + Y
     return Z, ∇z -> (∇z, ∇z)
 end
 @⬅BinaryFunctionOL Base.:+
 
 
-function ⬅Dual(::typeof(-), X::AbstractArray, Y::AbstractArray)
+function ⬅Dual(::typeof(-), X, Y)
     Z = X - Y
     return Z, ∇z -> (∇z, -∇z)
 end
 @⬅BinaryFunctionOL Base.:-
 
-function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
+function ⬅Dual(::typeof(.*), X, Y)
     Z = X .* Y
     return Z, ∇z -> (∇z .* Y, ∇z .* X)
 end
 @⬅BinaryFunctionOL Base.Broadcast.BroadcastFunction{typeof(*)}
 
-function ⬅Dual(::typeof(/), X::AbstractArray, Y::AbstractArray)
+function ⬅Dual(::typeof(/), X, Y)
     Z = X ./ Y
     return Z, ∇z -> (∇z ./ Y, ∇z .* X) # TODO
 end
@@ -119,14 +119,24 @@ end
 # ================================
 # Restructuring
 # ================================
-function ⬅Dual(::typeof(getindex), X::AbstractArray, indices...)
-    #TODO
+function ⬅Dual(::typeof(getindex), X::T, indices...) where T<:Union{AbstractMatrix, AbstractVector}
+    Z = getindex(X, indices...)
+    function sparsefill(size, ∇z, indices...)
+        S = spzeros(size)
+        S[indices...] = ∇z
+        return S
+    end
+    return Z, ∇z -> sparsefill(size(X), ∇z, indices...)
 end
+@⬅UnaryFunctionOL getindex
 
 
-function ⬅Dual(::typeof(sum), X::AbstractMatrix, dim)
-    # TODO
+"""
+function ⬅Dual(::typeof(sum), X::AbstractMatrix, dims)
+    if dims == 1
+        Z = sum(X, Dims=1)
+        return Z, ∇z -> (∇z * Y')
     Z = sum(X, Dims=1)
-    return Z, ∇z -> (∇z * Y', TODO)
+    return Z, ∇z -> (∇z * Y')
 end
-
+"""

@@ -74,8 +74,8 @@ end
 
 macro ⬅UnaryFunctionOL(func)
     return :(
-        function $func(X::⬅Tracker{T}) where T
-            (z, Chainer) = ⬅Dual($func, X.val)
+        function $func(X::⬅Tracker{T}, args::Vararg{Any}) where T
+            (z, Chainer) = ⬅Dual($func, X.val, args...)
             z = ⬅Tracker(z)
             push!(X.Chainers, ∇ -> Chainer(∇))
             push!(X.Childs, z.id)
@@ -88,8 +88,8 @@ end
 
 macro ⬅BinaryFunctionOL(func)
     return :(
-        function $func(x::⬅Tracker, y::⬅Tracker) 
-            z, Chainer = ⬅Dual($func, x.val, y.val)
+        function $func(x::⬅Tracker, y::⬅Tracker, args::Vararg{Any}) 
+            z, Chainer = ⬅Dual($func, x.val, y.val, args...)
             z = ⬅Tracker(z)
             for (s, i) in [(x, 1), (y, 2)]
                 push!(s.Chainers, ∇ -> Chainer(∇)[i])
