@@ -66,17 +66,15 @@ function ⬅Dual(::typeof(-), X::AbstractArray, Y::AbstractArray)
 end
 @⬅BinaryFunctionOL Base.:-
 
-"""
-function ⬅Dual(::typeof(.*), X::AbstractArray, Y::AbstractArray)
+function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
     Z = X .* Y
     return Z, ∇z -> (∇z .* Y, ∇z .* X)
 end
-@⬅BinaryFunctionOL Base.:.*
-"""
+@⬅BinaryFunctionOL Base.Broadcast.BroadcastFunction{typeof(*)}
 
 function ⬅Dual(::typeof(/), X::AbstractArray, Y::AbstractArray)
-    Z = X / Y
-    return Z, ∇z -> (∇z / Y, ∇z .* X) # TODO
+    Z = X ./ Y
+    return Z, ∇z -> (∇z ./ Y, ∇z .* X) # TODO
 end
 @⬅BinaryFunctionOL Base.:/
 
@@ -86,6 +84,7 @@ function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     return Z, ∇z -> ∇z .* map(x -> x > 0 ? x : 0, X)
 end
 @⬅UnaryFunctionOL ReLU 
+
 
 
 function ⬅Dual(::typeof(Sigmoid), X::AbstractArray)

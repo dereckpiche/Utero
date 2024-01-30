@@ -9,8 +9,8 @@ mutable struct Dense
     activation::Function
 
     function Dense(InDim::Int, OutDim::Int, activation::Function)
-        W = rand(Float16, (OutDim, InDim)) #TODO: good init
-        B = rand(Float16, (OutDim), 1)
+        W = randn(OutDim, InDim)
+        B = randn(OutDim, 1)
         return new(W, B, activation)
     end
 end

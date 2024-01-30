@@ -23,6 +23,8 @@ function AddParams!(ctx::⬅Context, x::Union{Real, AbstractArray})
     return x
 end
 
+AddParams!(ctx::⬅Context, x::Function) = nothing
+
 function AddParams!(ctx::⬅Context, X...)
     ps = []
     for x in X 

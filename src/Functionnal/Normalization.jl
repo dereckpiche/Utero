@@ -1,8 +1,10 @@
-function Normalize(X::AbstractArray, Total=1)
+function Normalize(X, Total=1)
     InitialTotal = sum(X)   
     return X * (Total / InitialTotal)
 end
 
-function Softmax(X::AbstractArray, Temp=1)
-    #TODO
+function Softmax(X, Temp=1)
+    sum = exp(Temp*X)^(1/2)
+    sum = sum' * sum
+    return X / sum
 end
