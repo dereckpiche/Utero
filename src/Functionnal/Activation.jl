@@ -1,4 +1,5 @@
 """
+    Activation.jl
 Activation functions applied element-wise.
 """
 
@@ -12,8 +13,5 @@ function Sigmoid(X::AbstractArray)
     return map(x -> 1 / (1 + exp(1)^(-x)), X)
 end
 
-function Softmax(v::Vector)
-    return
-end
     
 

@@ -4,9 +4,9 @@ mutable struct ⬅Tracker{T}
     Chainers
     Childs
     function ⬅Tracker(val) 
-        return new{typeof(val)}(val, uuid4(), [], [])
+        return new{typeof(val)}(val, uuid1(), [], [])
     end
-    ⬅Tracker(x::⬅Tracker)  = x
+    ⬅Tracker(x::⬅Tracker) = x
 end
 
 """

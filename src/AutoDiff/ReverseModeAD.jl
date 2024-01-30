@@ -5,17 +5,19 @@ mutable struct ⬅Context
     Params
     Tape
     Gradients::Dict
-    Counter
     function ⬅Context()
-        return new([], [], Dict(), [0])
+        ctx = new([], [], Dict())
+        global Tape = ctx.Tape
+        return ctx
     end
 end
 
-function ⬅CleanTape!(ctx)
+function ⬅CleanContext!(ctx)
     ctx.Tape = []
+    ctx.Gradients = Dict()
 end
 
-function AddParams!(ctx::⬅Context, x::Real)
+function AddParams!(ctx::⬅Context, x::Union{Real, AbstractArray})
     x = ⬅Tracker(x)
     push!(ctx.Params, x)
     return x
@@ -55,21 +57,21 @@ function CumulChains!(ctx::⬅Context, x::⬅Tracker)
 end
 
 function ForwardBackward!(ctx::⬅Context, f::Function, X...)
+    ⬅CleanContext!(ctx)
     global Tape = ctx.Tape
-    global Counter = ctx.Counter
 
     # Forward Pass
 
     y = f(X...)
-
     # Backward Pass
     setindex!(ctx.Gradients, 1.0, y.id)
     push!(ctx.Tape, y)
     for z in reverse(ctx.Tape)
         CumulChains!(ctx, z)
     end
-    ⬅CleanTape!(ctx)
-    return (y.val, PluckParamGrads(ctx))
+    paramgrads = PluckParamGrads(ctx)
+    ⬅CleanContext!(ctx)
+    return y.val, paramgrads
 end
 
 

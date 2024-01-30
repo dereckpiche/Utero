@@ -110,15 +110,19 @@ function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
 end
 @⬅BinaryFunctionOL Base.:*
 
+function ⬅Dual(::typeof(adjoint), X::AbstractArray)
+    return X', ∇z -> ∇z'
+end
+@⬅UnaryFunctionOL adjoint
+
 
 
 # ================================
 # Restructuring
 # ================================
-function ⬅Dual(::typeof(adjoint), X::AbstractArray)
-    return X', ∇z -> ∇z'
+function ⬅Dual(::typeof(getindex), X::AbstractArray, indices...)
+    #TODO
 end
-@⬅UnaryFunctionOL adjoint
 
 
 function ⬅Dual(::typeof(sum), X::AbstractMatrix, dim)
