@@ -70,14 +70,29 @@ function ⬅Dual(::typeof(.*), X, Y)
     Z = X .* Y
     return Z, ∇z -> (∇z .* Y, ∇z .* X)
 end
+⬅Dual(::typeof(*), X::Number, Y) = ⬅Dual(.*, X, Y)
+⬅Dual(::typeof(*), X, Y::Number) = ⬅Dual(.*, X, Y)
 @⬅BinaryFunctionOL Base.Broadcast.BroadcastFunction{typeof(*)}
 
 function ⬅Dual(::typeof(/), X, Y)
     Z = X ./ Y
-    return Z, ∇z -> (∇z ./ Y, ∇z .* X) # TODO
+    return Z, ∇z -> (∇z ./ Y, ∇z .* X) 
 end
 @⬅BinaryFunctionOL Base.:/
 
+function ⬅Dual(::typeof(.^), X, Y)
+    Z = X^Y
+    ∇X = @. Y * X^(Y-1)
+    ∇Y = @. log(X) * X^Y 
+    return Z, ∇Z -> (∇Z .* ∇X, ∇Z .* ∇Y)  
+end
+@⬅BinaryFunctionOL Base.Broadcast.BroadcastFunction{typeof(^)}
+
+function ⬅Dual(::typeof(exp.), X)
+    Z = exp.(X)
+    return Z, ∇z -> ∇z .* exp.(X) 
+end
+@⬅UnaryFunctionOL Base.Broadcast.BroadcastFunction{typeof(exp)}
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     Z = ReLU(X)

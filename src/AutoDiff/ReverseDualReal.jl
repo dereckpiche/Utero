@@ -1,11 +1,11 @@
 """
-    ⬅Dual(::typeof(f), x1::Real, x2::Real, ...)
+    ⬅Dual(::typeof(f), x1::Number, x2::Number, ...)
 "⬅" stands for "reverse mode"
 On the left, return the result of the operation. 
 With z = f(x1, x2, ...), on the right, return the 
 'Chainer" function: ``∂l/∂z -> ∂l/∂x1, ∂l/∂x2, ...``
 """
-function ⬅Dual(::typeof(+), x::Real, y::Real)
+function ⬅Dual(::typeof(+), x::Number, y::Number)
     z = x + y
     ∂z∂x = 1
     ∂z∂y = 1
@@ -13,7 +13,7 @@ function ⬅Dual(::typeof(+), x::Real, y::Real)
 end
 @⬅BinaryScalarFunctionOL Base.:+
 
-function ⬅Dual(::typeof(-), x::Real, y::Real)
+function ⬅Dual(::typeof(-), x::Number, y::Number)
     z = x - y
     ∂z∂x = 1
     ∂z∂y = -1
@@ -21,7 +21,7 @@ function ⬅Dual(::typeof(-), x::Real, y::Real)
 end
 @⬅BinaryScalarFunctionOL Base.:-
 
-function ⬅Dual(::typeof(*), x::Real, y::Real)
+function ⬅Dual(::typeof(*), x::Number, y::Number)
     z = x * y
     ∂z∂x = y
     ∂z∂y = x
@@ -30,7 +30,7 @@ end
 @⬅BinaryScalarFunctionOL Base.:*
 
 
-function ⬅Dual(::typeof(/), x::Real, y::Real)
+function ⬅Dual(::typeof(/), x::Number, y::Number)
     z = x / y
     ∂z∂x = y
     ∂z∂y = -x/y^2
@@ -39,7 +39,7 @@ end
 @⬅BinaryScalarFunctionOL Base.:/
 
 
-function ⬅Dual(::typeof(^), x::Real, y::Real)
+function ⬅Dual(::typeof(^), x::Number, y::Number)
     z = x^y
     ∂z∂x = y*x^(y-1)
     ∂z∂y = log(x) * x^y 
@@ -48,14 +48,14 @@ end
 @⬅BinaryScalarFunctionOL Base.:^
 
 
-function ⬅Dual(::typeof(sin), x::Real)
+function ⬅Dual(::typeof(sin), x::Number)
     z = sin(x)
     ∂z∂x = cos(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
 @⬅UnaryScalarFunctionOL Base.:sin
 
-function ⬅Dual(::typeof(cos), x::Real)
+function ⬅Dual(::typeof(cos), x::Number)
     z = cos(x)
     ∂z∂x = -sin(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
