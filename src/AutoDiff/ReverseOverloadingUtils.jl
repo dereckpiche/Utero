@@ -90,8 +90,8 @@ end
 
 macro ⬅BinaryFunctionOL(func)
     return :(
-        function $func(x::⬅Tracker, y::⬅Tracker, args::Vararg{Any}) 
-            z, Chainer = ⬅Dual($func, x.val, y.val, args...)
+        function $func(x::⬅Tracker, y::⬅Tracker) 
+            z, Chainer = ⬅Dual($func, x.val, y.val)
             z = ⬅Tracker(z)
             for (s, i) in [(x, 1), (y, 2)]
                 push!(s.Chainers, ∇ -> Chainer(∇)[i])

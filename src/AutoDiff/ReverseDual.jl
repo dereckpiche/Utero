@@ -97,9 +97,14 @@ end
 
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
+    @show X, Y
+    (X, Y) = Commonize(X, Y)
+    @show X, Y
     Z = X .* Y
     return Z, ∇Z -> (∇Z .* Y, ∇Z .* X)
 end
+
+
 @⬅BinaryBroadcastedOL Base.:*
 
 # =================== Divison
@@ -189,7 +194,7 @@ function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
 end
 @⬅BinaryFunctionOL Base.:*
 
-function ⬅Dual(::typeof(adjoint), X::AbstractArray)
+function ⬅Dual(::typeof(adjoint), X)
     return X', ∇Z -> ∇Z'
 end
 @⬅UnaryFunctionOL Base.adjoint
