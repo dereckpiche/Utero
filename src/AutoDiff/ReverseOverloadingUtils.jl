@@ -9,6 +9,8 @@ mutable struct ⬅Tracker{T}
     ⬅Tracker(x::⬅Tracker) = x
 end
 
+Base.length(X::⬅Tracker) = length(X.val)
+
 """
 convert(::Type{⬅Tracker}, x::Real) = ⬅Tracker(x)
 convert(::Type{⬅Tracker}, x::Int) = ⬅Tracker(x)
@@ -110,6 +112,40 @@ macro ⬅BinaryFunctionOL(func)
 
         function $func(x::G, y::⬅Tracker) where {G <: Union{Number, AbstractArray}}
             z, Chainer = ⬅Dual($func, x, y.val)
+            z = ⬅Tracker(z)
+            push!(y.Chainers, ∇ -> Chainer(∇)[2])
+            push!(y.Childs, z.id)
+            push!(Tape, y)
+            return z
+        end
+    )
+end
+
+
+macro ⬅BinaryBroadcastedOL(func)
+    return :(
+        function broadcast($func, x::⬅Tracker, y::⬅Tracker, args::Vararg{Any}) 
+            z, Chainer = ⬅Dual(Base.broadcast, $func, x.val, y.val, args...)
+            z = ⬅Tracker(z)
+            for (s, i) in [(x, 1), (y, 2)]
+                push!(s.Chainers, ∇ -> Chainer(∇)[i])
+                push!(s.Childs, z.id)
+                push!(Tape, s)
+            end
+            return z
+        end,
+
+        function broadcast($func, x::⬅Tracker, y::G) where {G <: Union{Number, AbstractArray}}
+            z, Chainer = ⬅Dual(Base.broadcast, $func, x.val, y)
+            z = ⬅Tracker(z)
+            push!(x.Chainers, ∇ -> Chainer(∇)[1])
+            push!(x.Childs, z.id)
+            push!(Tape, x)
+            return z
+        end,
+
+        function broadcast($func, x::G, y::⬅Tracker) where {G <: Union{Number, AbstractArray}}
+            z, Chainer = ⬅Dual(Base.broadcast, $func, x, y.val)
             z = ⬅Tracker(z)
             push!(y.Chainers, ∇ -> Chainer(∇)[2])
             push!(y.Childs, z.id)

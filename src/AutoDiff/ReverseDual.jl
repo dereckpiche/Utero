@@ -1,6 +1,6 @@
 """
 ================================================================
-    ReverseDualTens.jl
+    ReverseDual.jl
 
 PURPOSE:
 Compute the reverse dual of basic functions.
@@ -53,12 +53,31 @@ With z = f(x1, x2, ...), on the right, return the
 # Element-Wise
 # ================================
 
+# ======= addition =======
+
+function ⬅Dual(::typeof(+), x::Number, y::Number)
+    z = x + y
+    ∂z∂x = 1
+    ∂z∂y = 1
+    return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
+end
+@⬅BinaryScalarFunctionOL Base.:+
+
 function ⬅Dual(::typeof(+), X, Y)
     Z = X + Y
     return Z, ∇z -> (∇z, ∇z)
 end
 @⬅BinaryFunctionOL Base.:+
 
+# ======= substraction =======
+
+function ⬅Dual(::typeof(-), x::Number, y::Number)
+    z = x - y
+    ∂z∂x = 1
+    ∂z∂y = -1
+    return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
+end
+@⬅BinaryScalarFunctionOL Base.:-
 
 function ⬅Dual(::typeof(-), X, Y)
     Z = X - Y
@@ -66,27 +85,72 @@ function ⬅Dual(::typeof(-), X, Y)
 end
 @⬅BinaryFunctionOL Base.:-
 
-function ⬅Dual(::typeof(.*), X, Y)
+# ======= multiplication =======
+
+function ⬅Dual(::typeof(*), x::Number, y::Number)
+    z = x * y
+    ∂z∂x = y
+    ∂z∂y = x
+    return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
+end
+@⬅BinaryScalarFunctionOL Base.:*
+
+function ⬅Dual(::typeof(broadcast), ::typeof(*), X, Y)
     Z = X .* Y
     return Z, ∇z -> (∇z .* Y, ∇z .* X)
 end
 ⬅Dual(::typeof(*), X::Number, Y) = ⬅Dual(.*, X, Y)
 ⬅Dual(::typeof(*), X, Y::Number) = ⬅Dual(.*, X, Y)
-@⬅BinaryFunctionOL Base.Broadcast.BroadcastFunction{typeof(*)}
+@⬅BinaryBroadcastedOL Symbol(Base.:*)
+
+# ======= division =======
+function ⬅Dual(::typeof(/), x::Number, y::Number)
+    z = x / y
+    ∂z∂x = y
+    ∂z∂y = -x/y^2
+    return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
+end
+@⬅BinaryScalarFunctionOL Base.:/
 
 function ⬅Dual(::typeof(/), X, Y)
-    Z = X / Y
-    return Z, ∇z -> (∇z / Y, ∇z .* X) 
+    Z = @. X / Y
+    return Z, ∇z -> @. (∇z / Y, ∇z * X) 
 end
 @⬅BinaryFunctionOL Base.:/
 
-function ⬅Dual(::typeof(.^), X, Y)
-    Z = X^Y
+# ======= exponentiation =======
+function ⬅Dual(::typeof(^), x::Number, y::Number)
+    z = x^y
+    ∂z∂x = y*x^(y-1)
+    ∂z∂y = log(x) * x^y 
+    return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
+end
+@⬅BinaryScalarFunctionOL Base.:^
+
+function ⬅Dual(::typeof(broadcast), ::typeof(^), X, Y)
+    Z = @. X .^ Y
     ∇X = @. Y * X^(Y-1)
     ∇Y = @. log(X) * X^Y 
     return Z, ∇Z -> (∇Z .* ∇X, ∇Z .* ∇Y)  
 end
-@⬅BinaryFunctionOL Base.Broadcast.BroadcastFunction{typeof(^)}
+@⬅BinaryBroadcastedOL Symbol(Base.:^)
+
+# ======= sin =======
+function ⬅Dual(::typeof(sin), x::Number)
+    z = sin(x)
+    ∂z∂x = cos(x)
+    return z, ∂l∂z -> ∂l∂z*∂z∂x
+end
+@⬅UnaryScalarFunctionOL sin
+
+# ======= cos =======
+function ⬅Dual(::typeof(cos), x::Number)
+    z = cos(x)
+    ∂z∂x = -sin(x)
+    return z, ∂l∂z -> ∂l∂z*∂z∂x
+end
+@⬅UnaryScalarFunctionOL cos
+
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     Z = ReLU(X)
@@ -116,7 +180,7 @@ function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
     Z = X * Y
     return Z, ∇z -> (∇z * Y', X' * ∇z)
 end
-@⬅BinaryFunctionOL Base.:*
+@⬅BinaryFunctionOL *
 
 function ⬅Dual(::typeof(adjoint), X::AbstractArray)
     return X', ∇z -> ∇z'

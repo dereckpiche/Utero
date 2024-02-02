@@ -13,6 +13,7 @@ import Base.sin
 import Base.cos
 import Base.map
 import Base.prod
+import Base.broadcast
 import Base.sum, Base.adjoint, Base.getindex
 
 import Base.convert
@@ -31,8 +32,7 @@ include("Functionnal/Normalization.jl")
 export Normalize, Softmax
 
 include("AutoDiff/ReverseOverloadingUtils.jl")
-include("AutoDiff/ReverseDualReal.jl")
-include("AutoDiff/ReverseDualTens.jl")
+include("AutoDiff/ReverseDual.jl")
 include("AutoDiff/ReverseModeAD.jl")
 export ⬅Context, ⬅CleanContext!, AddParams!, ForwardBackward!
 
