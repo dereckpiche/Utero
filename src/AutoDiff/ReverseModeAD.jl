@@ -51,7 +51,7 @@ function CumulChains!(ctx::⬅Context, x::⬅Tracker)
         g = l(get(ctx.Gradients, p, 0))
     end
     if haskey(ctx.Gradients, x.id)
-        ctx.Gradients[x.id] += g
+        ctx.Gradients[x.id] = ctx.Gradients[x.id] .+ g
     else 
         setindex!(ctx.Gradients, g, x.id) 
     end 
@@ -66,7 +66,8 @@ function ForwardBackward!(ctx::⬅Context, f::Function, X...)
 
     y = f(X...)
     # Backward Pass
-    setindex!(ctx.Gradients, 1.0, y.id)
+    isa(y.val, Number) ? g = 1 : g = ones(size(y.val))
+    setindex!(ctx.Gradients, g, y.id)
     push!(ctx.Tape, y)
     for z in reverse(ctx.Tape)
         CumulChains!(ctx, z)

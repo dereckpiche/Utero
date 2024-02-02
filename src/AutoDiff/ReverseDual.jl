@@ -86,6 +86,7 @@ end
 
 # =================== Multiplication
 
+
 function ⬅Dual(::typeof(*), x::Number, y::Number)
     z = x * y
     ∂z∂x = y
@@ -94,12 +95,11 @@ function ⬅Dual(::typeof(*), x::Number, y::Number)
 end
 @⬅BinaryScalarFunctionOL Base.:*
 
+
 function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
     Z = X .* Y
-    return Z, ∇z -> (∇z .* Y, ∇z .* X)
+    return Z, ∇Z -> (∇Z .* Y, ∇Z .* X)
 end
-⬅Dual(::typeof(*), X::Number, Y) = ⬅Dual(.*, X, Y)
-⬅Dual(::typeof(*), X, Y::Number) = ⬅Dual(.*, X, Y)
 @⬅BinaryBroadcastedOL Base.:*
 
 # =================== Divison
@@ -112,11 +112,11 @@ function ⬅Dual(::typeof(/), x::Number, y::Number)
 end
 @⬅BinaryScalarFunctionOL Base.:/
 
-function ⬅Dual(::typeof(/), X, Y)
-    Z = @. X / Y
-    return Z, ∇z -> @. (∇z / Y, ∇z * X) 
+function ⬅Dual(::typeof(broadcasted), ::typeof(/), X, Y)
+    Z = X ./ Y
+    return Z, ∇Z -> (∇Z ./ Y, ∇Z .* X) 
 end
-@⬅BinaryFunctionOL Base.:/
+@⬅BinaryBroadcastedOL Base.:/
 
 # =================== Exponentiation
 
@@ -130,13 +130,12 @@ end
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(exp), X)
     Z = @. exp(X)
-    return Z, ∇Z -> @. ∇Z * exp(X)
-
+    return Z, ∇Z -> ∇Z .* Z
 end
 @⬅UnaryBroadcastedOL Base.exp
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
-    Z = @. X .^ Y
+    Z = @. X ^ Y
     ∇X = @. Y * X^(Y-1)
     ∇Y = @. log(X) * X^Y 
     return Z, ∇Z -> (∇Z .* ∇X, ∇Z .* ∇Y)  
@@ -186,14 +185,14 @@ end
 
 function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
     Z = X * Y
-    return Z, ∇z -> (∇z * Y', X' * ∇z)
+    return Z, ∇Z -> (∇Z * Y', X' * ∇Z)
 end
 @⬅BinaryFunctionOL Base.:*
 
 function ⬅Dual(::typeof(adjoint), X::AbstractArray)
-    return X', ∇z -> ∇z'
+    return X', ∇Z -> ∇Z'
 end
-@⬅UnaryFunctionOL adjoint
+@⬅UnaryFunctionOL Base.adjoint
 
 
 

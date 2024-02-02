@@ -124,7 +124,7 @@ end
 macro ⬅UnaryBroadcastedOL(func)
     return :(
         function Base.broadcasted(::typeof($func), X::⬅Tracker) 
-            (z, Chainer) = ⬅Dual(Base.broadcasted, $func, X.val, args...)
+            (z, Chainer) = ⬅Dual(Base.broadcasted, $func, X.val)
             z = ⬅Tracker(z)
             push!(X.Chainers, ∇ -> Chainer(∇))
             push!(X.Childs, z.id)
@@ -136,8 +136,9 @@ end
 
 macro ⬅BinaryBroadcastedOL(func)
     return :(
-        function Base.broadcasted(::typeof($func), x::⬅Tracker, y::⬅Tracker, args::Vararg{Any}) 
-            z, Chainer = ⬅Dual(Base.broadcasted, $func, x.val, y.val, args...)
+        function Base.broadcasted(::typeof($func), x::⬅Tracker, y::⬅Tracker) 
+            print("used")
+            z, Chainer = ⬅Dual(Base.broadcasted, $func, x.val, y.val)
             z = ⬅Tracker(z)
             for (s, i) in [(x, 1), (y, 2)]
                 push!(s.Chainers, ∇ -> Chainer(∇)[i])

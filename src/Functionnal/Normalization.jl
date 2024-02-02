@@ -4,9 +4,10 @@ function Normalize(X, Total=1)
 end
 
 function Softmax(X, Temp=1)
-    sum = Temp.*X
-    sum = exp.(sum)
-    sum = sum .^ (1/2)
-    sum = sum' * sum
-    return X / sum
+    #sum = Temp .* X
+    #sum = exp.(sum)
+    sum = X' * X
+    #sum = sum .^ (1/2)
+    return sum .* X 
 end
+
