@@ -121,6 +121,18 @@ macro ⬅BinaryFunctionOL(func)
     )
 end
 
+macro ⬅UnaryBroadcastedOL(func)
+    return :(
+        function Base.broadcasted(::typeof($func), X::⬅Tracker) 
+            (z, Chainer) = ⬅Dual(Base.broadcasted, $func, X.val, args...)
+            z = ⬅Tracker(z)
+            push!(X.Chainers, ∇ -> Chainer(∇))
+            push!(X.Childs, z.id)
+            push!(Tape, X)
+            return z
+        end
+    )
+end
 
 macro ⬅BinaryBroadcastedOL(func)
     return :(

@@ -53,8 +53,7 @@ With z = f(x1, x2, ...), on the right, return the
 # Element-Wise
 # ================================
 
-# ======= addition =======
-
+# =================== Addition
 function ⬅Dual(::typeof(+), x::Number, y::Number)
     z = x + y
     ∂z∂x = 1
@@ -69,7 +68,7 @@ function ⬅Dual(::typeof(+), X, Y)
 end
 @⬅BinaryFunctionOL Base.:+
 
-# ======= substraction =======
+# =================== Substraction 
 
 function ⬅Dual(::typeof(-), x::Number, y::Number)
     z = x - y
@@ -85,7 +84,7 @@ function ⬅Dual(::typeof(-), X, Y)
 end
 @⬅BinaryFunctionOL Base.:-
 
-# ======= multiplication =======
+# =================== Multiplication
 
 function ⬅Dual(::typeof(*), x::Number, y::Number)
     z = x * y
@@ -103,7 +102,8 @@ end
 ⬅Dual(::typeof(*), X, Y::Number) = ⬅Dual(.*, X, Y)
 @⬅BinaryBroadcastedOL Base.:*
 
-# ======= division =======
+# =================== Divison
+
 function ⬅Dual(::typeof(/), x::Number, y::Number)
     z = x / y
     ∂z∂x = y
@@ -118,7 +118,8 @@ function ⬅Dual(::typeof(/), X, Y)
 end
 @⬅BinaryFunctionOL Base.:/
 
-# ======= exponentiation =======
+# =================== Exponentiation
+
 function ⬅Dual(::typeof(^), x::Number, y::Number)
     z = x^y
     ∂z∂x = y*x^(y-1)
@@ -126,6 +127,13 @@ function ⬅Dual(::typeof(^), x::Number, y::Number)
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
 @⬅BinaryScalarFunctionOL Base.:^
+
+function ⬅Dual(::typeof(broadcasted), ::typeof(exp), X)
+    Z = @. exp(X)
+    return Z, ∇Z -> @. ∇Z * exp(X)
+
+end
+@⬅UnaryBroadcastedOL Base.exp
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
     Z = @. X .^ Y
@@ -135,7 +143,7 @@ function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
 end
 @⬅BinaryBroadcastedOL Base.:^
 
-# ======= sin =======
+# =================== Sin
 function ⬅Dual(::typeof(sin), x::Number)
     z = sin(x)
     ∂z∂x = cos(x)
@@ -143,7 +151,7 @@ function ⬅Dual(::typeof(sin), x::Number)
 end
 @⬅UnaryScalarFunctionOL sin
 
-# ======= cos =======
+# =================== Cos
 function ⬅Dual(::typeof(cos), x::Number)
     z = cos(x)
     ∂z∂x = -sin(x)
