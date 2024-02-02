@@ -95,13 +95,13 @@ function ⬅Dual(::typeof(*), x::Number, y::Number)
 end
 @⬅BinaryScalarFunctionOL Base.:*
 
-function ⬅Dual(::typeof(broadcast), ::typeof(*), X, Y)
+function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
     Z = X .* Y
     return Z, ∇z -> (∇z .* Y, ∇z .* X)
 end
 ⬅Dual(::typeof(*), X::Number, Y) = ⬅Dual(.*, X, Y)
 ⬅Dual(::typeof(*), X, Y::Number) = ⬅Dual(.*, X, Y)
-@⬅BinaryBroadcastedOL *
+@⬅BinaryBroadcastedOL Base.:*
 
 # ======= division =======
 function ⬅Dual(::typeof(/), x::Number, y::Number)
@@ -127,13 +127,13 @@ function ⬅Dual(::typeof(^), x::Number, y::Number)
 end
 @⬅BinaryScalarFunctionOL Base.:^
 
-function ⬅Dual(::typeof(broadcast), ::typeof(^), X, Y)
+function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
     Z = @. X .^ Y
     ∇X = @. Y * X^(Y-1)
     ∇Y = @. log(X) * X^Y 
     return Z, ∇Z -> (∇Z .* ∇X, ∇Z .* ∇Y)  
 end
-@⬅BinaryBroadcastedOL ^
+@⬅BinaryBroadcastedOL Base.:^
 
 # ======= sin =======
 function ⬅Dual(::typeof(sin), x::Number)
