@@ -101,7 +101,7 @@ function ⬅Dual(::typeof(broadcast), ::typeof(*), X, Y)
 end
 ⬅Dual(::typeof(*), X::Number, Y) = ⬅Dual(.*, X, Y)
 ⬅Dual(::typeof(*), X, Y::Number) = ⬅Dual(.*, X, Y)
-@⬅BinaryBroadcastedOL Symbol(Base.:*)
+@⬅BinaryBroadcastedOL *
 
 # ======= division =======
 function ⬅Dual(::typeof(/), x::Number, y::Number)
@@ -133,7 +133,7 @@ function ⬅Dual(::typeof(broadcast), ::typeof(^), X, Y)
     ∇Y = @. log(X) * X^Y 
     return Z, ∇Z -> (∇Z .* ∇X, ∇Z .* ∇Y)  
 end
-@⬅BinaryBroadcastedOL Symbol(Base.:^)
+@⬅BinaryBroadcastedOL ^
 
 # ======= sin =======
 function ⬅Dual(::typeof(sin), x::Number)
@@ -180,7 +180,7 @@ function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
     Z = X * Y
     return Z, ∇z -> (∇z * Y', X' * ∇z)
 end
-@⬅BinaryFunctionOL *
+@⬅BinaryFunctionOL Base.:*
 
 function ⬅Dual(::typeof(adjoint), X::AbstractArray)
     return X', ∇z -> ∇z'
