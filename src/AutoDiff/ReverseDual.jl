@@ -97,13 +97,17 @@ end
 
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
-    @show X, Y
-    (X, Y) = Commonize(X, Y)
-    @show X, Y
     Z = X .* Y
-    return Z, ∇Z -> (∇Z .* Y, ∇Z .* X)
+    # TODO: verify
+    ∇X = ∇Z -> ∇Z .* Y
+    ∇Y = ∇Z -> ∇Z .* X
+    function BroadcastChainer(∇Z, ∇X, ∇Y)
+        if NbElements(X) == NbElements(Y) return (∇X(∇Z), ∇Y(∇Z)) 
+        elseif NbElements(X) > NbElements(Y) return (∇X(∇Z), sum(∇Y(∇Z))) end
+        return (sum(∇X(∇Z)), ∇Y(∇Z))
+    end
+    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X, ∇Y)
 end
-
 
 @⬅BinaryBroadcastedOL Base.:*
 
@@ -118,6 +122,7 @@ end
 @⬅BinaryScalarFunctionOL Base.:/
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(/), X, Y)
+    # TODO: add BroadcastChainer
     Z = X ./ Y
     return Z, ∇Z -> (∇Z ./ Y, ∇Z .* X) 
 end
@@ -134,12 +139,14 @@ end
 @⬅BinaryScalarFunctionOL Base.:^
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(exp), X)
+    # TODO: fix
     Z = @. exp(X)
     return Z, ∇Z -> ∇Z .* Z
 end
 @⬅UnaryBroadcastedOL Base.exp
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
+    # TODO: fix
     Z = @. X ^ Y
     ∇X = @. Y * X^(Y-1)
     ∇Y = @. log(X) * X^Y 
