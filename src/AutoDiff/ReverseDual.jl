@@ -13,35 +13,6 @@ TODOs:
 ================================================================
 """
 
-
-
-"""
-    Chain(Jyx, Jzy)
-Apply the chain rule for two Tensorial Jacobians of arbitrary order.
-"""
-function Chain(Jyx::AbstractArray, Jzy::AbstractArray, OrderY::Int64)
-    xshape = size(Jyx)[OrderY+1:end]
-    yshape = size(Jyx)[1:OrderY]
-    zshape = size(Jzy)[1:GetOrder(Jzy)-OrderY]
-    J = zeros(zshape..., xshape...)
-    xIters = map(k -> 1:k, xshape)
-    yIters = map(k -> 1:k, yshape)
-    zIters = map(k -> 1:k, zshape)
-    for (zindices, xindices) in Base.product(Base.product(zIters...), Base.product(xIters...))
-        chainsum = 0.0
-        for yindices in Base.product(yIters...)
-            chainsum += Jyx[yindices..., xindices...] * Jzy[zindices..., yindices...]
-        end
-        J[zindices..., xindices...] = chainsum
-    end
-    return J
-end
-
-Chain(Jyx::AbstractArray, Jzy::Real, OrderY::Int64) = Jyx * Jzy
-Chain(Jyx::Real, Jzy::AbstractArray, OrderY::Int64) = Jyx * Jzy
-
-
-
 """
     ⬅Dual(::typeof(f), x1::AbstractArray, x2::AbstractArray, ...)
 On the left, return the result of the operation. 
@@ -60,13 +31,11 @@ function ⬅Dual(::typeof(+), x::Number, y::Number)
     ∂z∂y = 1
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅BinaryScalarFunctionOL Base.:+
 
 function ⬅Dual(::typeof(+), X, Y)
     Z = X + Y
     return Z, ∇z -> (∇z, ∇z)
 end
-@⬅BinaryFunctionOL Base.:+
 
 # =================== Substraction 
 
@@ -76,13 +45,11 @@ function ⬅Dual(::typeof(-), x::Number, y::Number)
     ∂z∂y = -1
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅BinaryScalarFunctionOL Base.:-
 
 function ⬅Dual(::typeof(-), X, Y)
     Z = X - Y
     return Z, ∇z -> (∇z, -∇z)
 end
-@⬅BinaryFunctionOL Base.:-
 
 # =================== Multiplication
 
@@ -93,8 +60,6 @@ function ⬅Dual(::typeof(*), x::Number, y::Number)
     ∂z∂y = x
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅BinaryScalarFunctionOL Base.:*
-
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
     Z = X .* Y
@@ -109,8 +74,6 @@ function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
     return Z, ∇Z -> BroadcastChainer(∇Z, ∇X, ∇Y)
 end
 
-@⬅BinaryBroadcastedOL Base.:*
-
 # =================== Divison
 
 function ⬅Dual(::typeof(/), x::Number, y::Number)
@@ -119,14 +82,18 @@ function ⬅Dual(::typeof(/), x::Number, y::Number)
     ∂z∂y = -x/y^2
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅BinaryScalarFunctionOL Base.:/
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(/), X, Y)
-    # TODO: add BroadcastChainer
     Z = X ./ Y
-    return Z, ∇Z -> (∇Z ./ Y, ∇Z .* X) 
+    ∇X = ∇Z -> ∇Z ./ Y
+    ∇Y = ∇Z -> ∇Z .* X
+    function BroadcastChainer(∇Z, ∇X, ∇Y)
+        if NbElements(X) == NbElements(Y) return (∇X(∇Z), ∇Y(∇Z)) 
+        elseif NbElements(X) > NbElements(Y) return (∇X(∇Z), sum(∇Y(∇Z))) end
+        return (sum(∇X(∇Z)), ∇Y(∇Z))
+    end
+    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X, ∇Y)
 end
-@⬅BinaryBroadcastedOL Base.:/
 
 # =================== Exponentiation
 
@@ -136,23 +103,28 @@ function ⬅Dual(::typeof(^), x::Number, y::Number)
     ∂z∂y = log(x) * x^y 
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
-@⬅BinaryScalarFunctionOL Base.:^
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(exp), X)
     # TODO: fix
-    Z = @. exp(X)
-    return Z, ∇Z -> ∇Z .* Z
+    Z = exp.(X)
+    ∇X = ∇Z -> ∇Z .* Z
+    function BroadcastChainer(∇Z, ∇X)
+        (NbElements(X) > 1) ? (return sum(∇X(∇Z))) : return ∇X(∇Z)
+    end
+    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X)
 end
-@⬅UnaryBroadcastedOL Base.exp
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
-    # TODO: fix
-    Z = @. X ^ Y
-    ∇X = @. Y * X^(Y-1)
-    ∇Y = @. log(X) * X^Y 
-    return Z, ∇Z -> (∇Z .* ∇X, ∇Z .* ∇Y)  
+    Z = X .^ Y
+    ∇X = ∇Z -> ∇Z .* X.^(Y-1)
+    ∇Y = ∇Z -> ∇Z .* log(X) .* X .^ Y 
+    function BroadcastChainer(∇Z, ∇X, ∇Y)
+        if NbElements(X) == NbElements(Y) return (∇X(∇Z), ∇Y(∇Z)) 
+        elseif NbElements(X) > NbElements(Y) return (∇X(∇Z), sum(∇Y(∇Z))) end
+        return (sum(∇X(∇Z)), ∇Y(∇Z))
+    end
+    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X, ∇Y)
 end
-@⬅BinaryBroadcastedOL Base.:^
 
 # =================== Sin
 function ⬅Dual(::typeof(sin), x::Number)
@@ -160,7 +132,6 @@ function ⬅Dual(::typeof(sin), x::Number)
     ∂z∂x = cos(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
-@⬅UnaryScalarFunctionOL sin
 
 # =================== Cos
 function ⬅Dual(::typeof(cos), x::Number)
@@ -168,22 +139,18 @@ function ⬅Dual(::typeof(cos), x::Number)
     ∂z∂x = -sin(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
-@⬅UnaryScalarFunctionOL cos
 
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     Z = ReLU(X)
     return Z, ∇z -> ∇z .* map(x -> x > 0 ? x : 0, X)
 end
-@⬅UnaryFunctionOL ReLU 
-
 
 
 function ⬅Dual(::typeof(Sigmoid), X::AbstractArray)
     Z = Sigmoid(X)
     return Z, ∇z -> ∇z .* map(x -> Sigmoid(x)*(1- Sigmoid(x)), X)
 end
-@⬅UnaryFunctionOL Sigmoid
 
 
 function ⬅Dual(::typeof(map), f::Function, X::AbstractArray)
@@ -199,12 +166,10 @@ function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
     Z = X * Y
     return Z, ∇Z -> (∇Z * Y', X' * ∇Z)
 end
-@⬅BinaryFunctionOL Base.:*
 
 function ⬅Dual(::typeof(adjoint), X)
     return X', ∇Z -> ∇Z'
 end
-@⬅UnaryFunctionOL Base.adjoint
 
 
 
@@ -220,15 +185,12 @@ function ⬅Dual(::typeof(getindex), X::T, indices...) where T<:Union{AbstractMa
     end
     return Z, ∇z -> sparsefill(size(X), ∇z, indices...)
 end
-@⬅UnaryFunctionOL getindex
 
-
-"""
 function ⬅Dual(::typeof(sum), X::AbstractMatrix, dims)
+    # TODO
     if dims == 1
         Z = sum(X, Dims=1)
         return Z, ∇z -> (∇z * Y')
     Z = sum(X, Dims=1)
     return Z, ∇z -> (∇z * Y')
 end
-"""
