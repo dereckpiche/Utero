@@ -13,7 +13,7 @@ import Base.sin
 import Base.cos
 import Base.map
 import Base.prod
-import Base.broadcast, Base.broadcasted
+import Base.broadcast, Base.broadcasted, Base.dropdims
 import Base.sum, Base.adjoint, Base.getindex
 
 import Base.convert

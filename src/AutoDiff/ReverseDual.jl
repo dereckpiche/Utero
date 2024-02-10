@@ -24,7 +24,9 @@ With z = f(x1, x2, ...), on the right, return the
 # Element-Wise
 # ================================
 
+
 # =================== Addition
+
 function ⬅Dual(::typeof(+), x::Number, y::Number)
     z = x + y
     ∂z∂x = 1
@@ -36,6 +38,7 @@ function ⬅Dual(::typeof(+), X, Y)
     Z = X + Y
     return Z, ∇z -> (∇z, ∇z)
 end
+
 
 # =================== Substraction 
 
@@ -51,8 +54,8 @@ function ⬅Dual(::typeof(-), X, Y)
     return Z, ∇z -> (∇z, -∇z)
 end
 
-# =================== Multiplication
 
+# =================== Multiplication
 
 function ⬅Dual(::typeof(*), x::Number, y::Number)
     z = x * y
@@ -62,16 +65,17 @@ function ⬅Dual(::typeof(*), x::Number, y::Number)
 end
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
+    X, Y = SameOrder(X, Y)
     Z = X .* Y
-    # TODO: verify
-    ∇X = ∇Z -> ∇Z .* Y
-    ∇Y = ∇Z -> ∇Z .* X
-    function BroadcastChainer(∇Z, ∇X, ∇Y)
-        if NbElements(X) == NbElements(Y) return (∇X(∇Z), ∇Y(∇Z)) 
-        elseif NbElements(X) > NbElements(Y) return (∇X(∇Z), sum(∇Y(∇Z))) end
-        return (sum(∇X(∇Z)), ∇Y(∇Z))
+    BroadcastChainer = ∇Z -> begin
+        ∇X = ∇Z .* Y
+        ∇Y = ∇Z .* X
+        sz, sx, sy = size(∇Z), size(∇X), size(∇Y)
+        sz == sx ? nothing : ∇X = sum(∇X, dims=findall(sx .< sz))
+        sz == sy ? nothing : ∇Y = sum(∇Y, dims=findall(sy .< sz))
+        return ∇X, ∇Y
     end
-    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X, ∇Y)
+    return Z, ∇Z -> BroadcastChainer(∇Z)
 end
 
 # =================== Divison
@@ -84,16 +88,19 @@ function ⬅Dual(::typeof(/), x::Number, y::Number)
 end
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(/), X, Y)
+    X, Y = SameOrder(X, Y)
     Z = X ./ Y
-    ∇X = ∇Z -> ∇Z ./ Y
-    ∇Y = ∇Z -> ∇Z .* X
-    function BroadcastChainer(∇Z, ∇X, ∇Y)
-        if NbElements(X) == NbElements(Y) return (∇X(∇Z), ∇Y(∇Z)) 
-        elseif NbElements(X) > NbElements(Y) return (∇X(∇Z), sum(∇Y(∇Z))) end
-        return (sum(∇X(∇Z)), ∇Y(∇Z))
+    BroadcastChainer = ∇Z -> begin
+        ∇X = ∇Z ./ Y
+        ∇Y = ∇Z .* ( .- X ./ (Y .^ 2) )
+        sz, sx, sy = size(∇Z), size(∇X), size(∇Y)
+        sz == sx ? nothing : ∇X = sum(∇X, dims=findall(sx .< sz))
+        sz == sy ? nothing : ∇Y = sum(∇Y, dims=findall(sy .< sz))
+        return ∇X, ∇Y
     end
-    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X, ∇Y)
+    return Z, ∇Z -> BroadcastChainer(∇Z)
 end
+
 
 # =================== Exponentiation
 
@@ -105,26 +112,25 @@ function ⬅Dual(::typeof(^), x::Number, y::Number)
 end
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(exp), X)
-    # TODO: fix
     Z = exp.(X)
     ∇X = ∇Z -> ∇Z .* Z
-    function BroadcastChainer(∇Z, ∇X)
-        (NbElements(X) > 1) ? (return sum(∇X(∇Z))) : return ∇X(∇Z)
-    end
-    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X)
+    return Z, ∇Z -> ∇X(∇Z)
 end
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
+    X, Y = SameOrder(X, Y)
     Z = X .^ Y
-    ∇X = ∇Z -> ∇Z .* X.^(Y-1)
-    ∇Y = ∇Z -> ∇Z .* log(X) .* X .^ Y 
-    function BroadcastChainer(∇Z, ∇X, ∇Y)
-        if NbElements(X) == NbElements(Y) return (∇X(∇Z), ∇Y(∇Z)) 
-        elseif NbElements(X) > NbElements(Y) return (∇X(∇Z), sum(∇Y(∇Z))) end
-        return (sum(∇X(∇Z)), ∇Y(∇Z))
+    BroadcastChainer = ∇Z -> begin
+        ∇X = ∇Z .* X.^(Y-1)
+        ∇Y = ∇Z .* log(X) .* X .^ Y 
+        sz, sx, sy = size(∇Z), size(∇X), size(∇Y)
+        sz == sx ? nothing : ∇X = sum(∇X, dims=findall(sx .< sz))
+        sz == sy ? nothing : ∇Y = sum(∇Y, dims=findall(sy .< sz))
+        return ∇X, ∇Y
     end
-    return Z, ∇Z -> BroadcastChainer(∇Z, ∇X, ∇Y)
+    return Z, ∇Z -> BroadcastChainer(∇Z)
 end
+
 
 # =================== Sin
 function ⬅Dual(::typeof(sin), x::Number)
@@ -132,6 +138,7 @@ function ⬅Dual(::typeof(sin), x::Number)
     ∂z∂x = cos(x)
     return z, ∂l∂z -> ∂l∂z*∂z∂x
 end
+
 
 # =================== Cos
 function ⬅Dual(::typeof(cos), x::Number)
@@ -162,10 +169,15 @@ end
 # Linear Algebra
 # ================================
 
+# =================== Matrix Multiplication
+
 function ⬅Dual(::typeof(*), X::AbstractArray, Y::AbstractArray)
     Z = X * Y
     return Z, ∇Z -> (∇Z * Y', X' * ∇Z)
 end
+
+
+# =================== Transposition
 
 function ⬅Dual(::typeof(adjoint), X)
     return X', ∇Z -> ∇Z'
@@ -186,11 +198,9 @@ function ⬅Dual(::typeof(getindex), X::T, indices...) where T<:Union{AbstractMa
     return Z, ∇z -> sparsefill(size(X), ∇z, indices...)
 end
 
-function ⬅Dual(::typeof(sum), X::AbstractMatrix, dims)
-    # TODO
-    if dims == 1
-        Z = sum(X, Dims=1)
-        return Z, ∇z -> (∇z * Y')
-    Z = sum(X, Dims=1)
-    return Z, ∇z -> (∇z * Y')
+function ⬅Dual(::typeof(sum), X; dims=:)
+    # TODO: verify
+    Z = sum(X, dims=dims)
+    dims = filter(dim -> !(dim in dims), 1:length(size(X)))
+    return Z, ∇Z -> mapslices(_ -> dropdims(Z), zeros(size(X)), dims=dims)
 end
