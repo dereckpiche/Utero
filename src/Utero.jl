@@ -31,8 +31,9 @@ export MeanSquaredError
 include("Functionnal/Normalization.jl")
 export Normalize, Softmax
 
-include("AutoDiff/ReverseOverloadingUtils.jl")
+include("AutoDiff/ReverseOverloading.jl")
 include("AutoDiff/ReverseDual.jl")
+export ⬅Dual
 include("AutoDiff/ReverseModeAD.jl")
 export ⬅Context, ⬅CleanContext!, AddParams!, ForwardBackward!
 

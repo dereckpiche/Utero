@@ -20,11 +20,9 @@ HasTracker(args...) = any(isa(arg, ⬅Tracker) for arg in args)
 """
     ⬅Overload(func)
 Inefficient way of overloading.
-"""
-
 macro ⬅Overload(func)
     return :(
-        function $func(args...; kwargs...) 
+        function func(args...; kwargs...) 
             if HasTracker(args...)
                 #TODO
             else
@@ -33,6 +31,7 @@ macro ⬅Overload(func)
         end
      )
 end
+"""
 
 """
     ⬅Overload(mode, func)
@@ -40,10 +39,11 @@ Efficient way of overloading.
 """
 
 macro ⬅Overload(mode, func)
+    # =================== Operators with single differentiable tensor
     if mode == :Unary
         return :(
             function $func(x::⬅Tracker, args...; kwargs...) 
-                (z, Chainer) = ⬅Dual($func, x.val)
+                (z, Chainer) = ⬅Dual($func, x.val, args...; kwargs...)
                 z = ⬅Tracker(z)
                 push!(x.Chainers, ∇ -> Chainer(∇))
                 push!(x.Childs, z.id)
@@ -51,9 +51,10 @@ macro ⬅Overload(mode, func)
                 return z
             end
          )
-
+    
+    # =================== Operators with two possible differentiable tensor
     elseif mode == :Binary
-        return :(
+        return quote
         function $func(x::⬅Tracker, y::⬅Tracker, args...; kwargs...) 
             z, Chainer = ⬅Dual($func, x.val, y.val, args...; kwargs...)
             z = ⬅Tracker(z)
@@ -74,16 +75,17 @@ macro ⬅Overload(mode, func)
             return z
         end,
 
-        function $func(x, y::⬅Tracker, x, args...; kwargs...) 
-            z, Chainer = ⬅Dual($func, y.val, x, args...; kwargs...) 
+        function $func(x, y::⬅Tracker, args...; kwargs...) 
+            z, Chainer = ⬅Dual($func, x, y.val, args...; kwargs...) 
             z = ⬅Tracker(z)
             push!(y.Chainers, ∇ -> Chainer(∇)[2])
             push!(y.Childs, z.id)
             push!(Tape, y)
             return z
         end
-    )
+    end
 
+    # =================== Operators with two possible differentiable tensor
     elseif mode == :BroadcastedBinary
         return :(
             function Base.broadcasted(::typeof($func),
@@ -121,6 +123,7 @@ macro ⬅Overload(mode, func)
                 return z
             end
         )
+    end
 end        
 
 
@@ -131,46 +134,46 @@ end
 # Element-Wise
 # ================================
 
-@⬅Overload :Binary Base.:+
+@⬅Overload Binary Base.:+
 
-@⬅Overload :Binary Base.:-
+@⬅Overload Binary Base.:-
 
-@⬅Overload :Binary Base.*
-@⬅Overload :BroadcastedBinary Base.*
+@⬅Overload Binary Base.:*
+@⬅Overload BroadcastedBinary Base.:*
 
-@⬅Overload :Binary Base./
-@⬅Overload :BroadcastedBinary Base./
+@⬅Overload Binary Base.:/
+@⬅Overload BroadcastedBinary Base.:/
 
-@Overload :Binary Base.^
-@⬅Overload :BroadcastedUnary Base.^
+@⬅Overload Binary Base.:^
+@⬅Overload BroadcastedUnary Base.:^
 
-@⬅Overload :Unary Base.exp
-@⬅Overload :BroadcastedUnary Base.exp
+@⬅Overload Unary Base.exp
+@⬅Overload BroadcastedUnary Base.exp
 
-@⬅Overload :Unary Base.sin
+@⬅Overload Unary Base.sin
 
-@⬅Overload :Unary Base.cos
+@⬅Overload Unary Base.cos
 
-@⬅Overload :Unary ReLU 
+@⬅Overload Unary ReLU 
 
-@⬅Overload :Unary Sigmoid
+@⬅Overload Unary Sigmoid
 
 
 # ================================
 # Linear Algebra
 # ================================
 
-#@⬅Overload :Binary Base.:*
+#@⬅Overload Binary Base.:*
 
-@⬅Overload :Unary Base.adjoint
+@⬅Overload Unary Base.adjoint
 
 
 # ================================
 # Restructuring
 # ================================
-@⬅Overload :Unary sum
+@⬅Overload Unary sum
 
-@⬅Overload :Unary getindex
+@⬅Overload Unary getindex
 
 
 
