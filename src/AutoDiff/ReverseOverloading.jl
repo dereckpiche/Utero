@@ -15,10 +15,28 @@ function Untrack(X::⬅Tracker...)
     return [x.val for x in X]
 end
 
+HasTracker(args...) = any(isa(arg, ⬅Tracker) for arg in args)
 
 """
-    ⬅Overload
-TODO
+    ⬅Overload(func)
+Inefficient way of overloading.
+"""
+
+macro ⬅Overload(func)
+    return :(
+        function $func(args...; kwargs...) 
+            if HasTracker(args...)
+                #TODO
+            else
+                #TODO
+            end
+        end
+     )
+end
+
+"""
+    ⬅Overload(mode, func)
+Efficient way of overloading.
 """
 
 macro ⬅Overload(mode, func)
@@ -117,7 +135,6 @@ end
 
 @⬅Overload :Binary Base.:-
 
-
 @⬅Overload :Binary Base.*
 @⬅Overload :BroadcastedBinary Base.*
 
@@ -125,7 +142,9 @@ end
 @⬅Overload :BroadcastedBinary Base./
 
 @Overload :Binary Base.^
+@⬅Overload :BroadcastedUnary Base.^
 
+@⬅Overload :Unary Base.exp
 @⬅Overload :BroadcastedUnary Base.exp
 
 @⬅Overload :Unary Base.sin
@@ -149,6 +168,7 @@ end
 # ================================
 # Restructuring
 # ================================
+@⬅Overload :Unary sum
 
 @⬅Overload :Unary getindex
 
