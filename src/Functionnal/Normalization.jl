@@ -1,7 +1,4 @@
-function Normalize(X, Total=1)
-    InitialTotal = sum(X)   
-    return X * (Total / InitialTotal)
-end
+Normalize(X, Total=1) =  X * (Total / sum(X))
 
 function Softmax(X, Temp=1)
     expo = exp.(Temp .* X)

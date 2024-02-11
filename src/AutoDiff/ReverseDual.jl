@@ -82,8 +82,8 @@ end
 
 function ⬅Dual(::typeof(/), x::Number, y::Number)
     z = x / y
-    ∂z∂x = y
-    ∂z∂y = -x/y^2
+    ∂z∂x = 1 / y
+    ∂z∂y = -x / y^2
     return z, (∂l∂z) -> (∂l∂z*∂z∂x, ∂l∂z*∂z∂y)
 end
 
@@ -96,7 +96,6 @@ function ⬅Dual(::typeof(broadcasted), ::typeof(/), X, Y)
         sz, sx, sy = size(Z), size(X), size(Y)
         sz == sx ? nothing : ∇X = sum(∇X, dims=findall(sx .< sz))
         sz == sy ? nothing : ∇Y = sum(∇Y, dims=findall(sy .< sz))
-        return ∇X, ∇Y
         return ∇X, ∇Y
     end
     return Z, ∇Z -> BroadcastChainer(∇Z)
@@ -151,7 +150,7 @@ end
 
 function ⬅Dual(::typeof(ReLU), X::AbstractArray)
     Z = ReLU(X)
-    return Z, ∇z -> ∇z .* map(x -> x > 0 ? x : 0, X)
+    return Z, ∇z -> ∇z .* map(x -> x > 0 ? 1 : 0, X)
 end
 
 
@@ -202,12 +201,12 @@ end
 
 function ⬅Dual(::typeof(sum), X)
     Z = sum(X)
-    return Z, ∇Z -> ∇Z
+    return Z, ∇Z -> fill(∇Z, size(X))
 end
 
-function ⬅Dual(::typeof(sum), X; dims=:)
-    # TODO: FIX
+function ⬅Dual(::typeof(sum), X; dims=1)
     Z = sum(X, dims=dims)
     dims = filter(dim -> !(dim in dims), 1:length(size(X)))
-    return Z, ∇Z -> mapslices(_ -> dropdims(Z), zeros(size(X)), dims=dims)
+    IsaWrappedFloat(Z) ? CleanZ = Z : CleanZ = dropdims(Z)
+    return Z, ∇Z -> mapslices(_ -> CleanZ, zeros(size(X)), dims=dims)
 end

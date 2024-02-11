@@ -9,7 +9,7 @@ mutable struct ⬅Tracker{T}
     ⬅Tracker(x::⬅Tracker) = x
 end
 
-#Base.length(X::⬅Tracker) = length(X.val)
+Base.length(X::⬅Tracker) = length(X.val)
 
 function Untrack(X::⬅Tracker...)
     return [x.val for x in X]

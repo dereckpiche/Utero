@@ -4,11 +4,12 @@ GetOrder(X::AbstractArray) = length(size(X))
 
 NbElements(x::AbstractArray) = prod(size(x))
 NbElements(x::Number) = 1
+IsaWrappedFloat(Z) = (NbElements(Z) == 1)
 
 dropdims(X) = dropdims(X, dims=Tuple(findall(size(X) .== 1)))
 
 function OneHot(loc::Int, size=10)
-    Y = zeros(Float64, size, 1)
+    Y = zeros(Float64, size)
     Y[loc] = 1
     return Y
 end

@@ -11,7 +11,13 @@ function (S::Sequential)(X)
 end
 
 function AddParams!(ctx::⬅Context, S::Sequential)
-    for f in S.Sequence 
-        f = AddParams!(ctx, f) 
+    for layer in S.Sequence 
+        isa(layer, Mutator) ? layer = AddParams!(ctx, layer) : nothing
+    end
+end
+
+function Untrack!(S::Sequential)
+    for layer in S.Sequence
+        isa(layer, Mutator) ? Untrack!(layer) : nothing
     end
 end

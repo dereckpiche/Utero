@@ -20,7 +20,7 @@ import Base.convert
 import Base.promote_rule
 
 include("Utils/ArrayUtils.jl")
-export OneHot
+export OneHot, NbElements
 include("Utils/IterationUtils.jl")
 export DataIterator
 
@@ -37,6 +37,8 @@ export ⬅Dual
 include("AutoDiff/ReverseModeAD.jl")
 export ⬅Context, ⬅CleanContext!, AddParams!, ForwardBackward!
 
+
+include("Nets/Mutator.jl")
 include("Nets/Dense.jl")
 export Dense
 include("Nets/Sequential.jl")
@@ -44,8 +46,11 @@ export Sequential
 
 include("Nets/Sequential.jl")
 
+include("Training/Accuracy.jl")
+export Accuracy
 include("Training/Step.jl")
 export GradientStep!
 
+export Untrack!
 
 end
