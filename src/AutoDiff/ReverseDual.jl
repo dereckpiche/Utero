@@ -65,12 +65,12 @@ function ⬅Dual(::typeof(*), x::Number, y::Number)
 end
 
 function ⬅Dual(::typeof(broadcasted), ::typeof(*), X, Y)
-    #X, Y = SameOrder(X, Y)
+    X, Y = SameOrder(X, Y)
     Z = X .* Y
     BroadcastChainer = ∇Z -> begin
         ∇X = ∇Z .* Y
         ∇Y = ∇Z .* X
-        sz, sx, sy = size(∇Z), size(∇X), size(∇Y)
+        sz, sx, sy = size(Z), size(X), size(Y)
         sz == sx ? nothing : ∇X = sum(∇X, dims=findall(sx .< sz))
         sz == sy ? nothing : ∇Y = sum(∇Y, dims=findall(sy .< sz))
         return ∇X, ∇Y
@@ -93,9 +93,10 @@ function ⬅Dual(::typeof(broadcasted), ::typeof(/), X, Y)
     BroadcastChainer = ∇Z -> begin
         ∇X = ∇Z ./ Y
         ∇Y = ∇Z .* ( .- X ./ (Y .^ 2) )
-        sz, sx, sy = size(∇Z), size(∇X), size(∇Y)
+        sz, sx, sy = size(Z), size(X), size(Y)
         sz == sx ? nothing : ∇X = sum(∇X, dims=findall(sx .< sz))
         sz == sy ? nothing : ∇Y = sum(∇Y, dims=findall(sy .< sz))
+        return ∇X, ∇Y
         return ∇X, ∇Y
     end
     return Z, ∇Z -> BroadcastChainer(∇Z)
@@ -123,7 +124,7 @@ function ⬅Dual(::typeof(broadcasted), ::typeof(^), X, Y)
     BroadcastChainer = ∇Z -> begin
         ∇X = ∇Z .* X.^(Y-1)
         ∇Y = ∇Z .* log(X) .* X .^ Y 
-        sz, sx, sy = size(∇Z), size(∇X), size(∇Y)
+        sz, sx, sy = size(Z), size(X), size(Y)
         sz == sx ? nothing : ∇X = sum(∇X, dims=findall(sx .< sz))
         sz == sy ? nothing : ∇Y = sum(∇Y, dims=findall(sy .< sz))
         return ∇X, ∇Y
@@ -198,8 +199,14 @@ function ⬅Dual(::typeof(getindex), X::T, indices...) where T<:Union{AbstractMa
     return Z, ∇z -> sparsefill(size(X), ∇z, indices...)
 end
 
+
+function ⬅Dual(::typeof(sum), X)
+    Z = sum(X)
+    return Z, ∇Z -> ∇Z
+end
+
 function ⬅Dual(::typeof(sum), X; dims=:)
-    # TODO: verify
+    # TODO: FIX
     Z = sum(X, dims=dims)
     dims = filter(dim -> !(dim in dims), 1:length(size(X)))
     return Z, ∇Z -> mapslices(_ -> dropdims(Z), zeros(size(X)), dims=dims)

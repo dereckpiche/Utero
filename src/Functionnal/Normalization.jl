@@ -4,8 +4,8 @@ function Normalize(X, Total=1)
 end
 
 function Softmax(X, Temp=1)
-    exp = exp.(Temp .* X)
-    expsum = sum(exp)
-    return exp ./ expsum
+    expo = exp.(Temp .* X)
+    expsum = sum(expo, dims=1)
+    return expo ./ expsum
 end
 

@@ -85,7 +85,21 @@ macro ⬅Overload(mode, func)
         end
     end
 
-    # =================== Operators with two possible differentiable tensor
+    elseif mode == :BroadcastedUnary
+        return :(
+            function Base.broadcasted(::typeof($func), 
+                x::⬅Tracker, args...; kwargs...) 
+                (z, Chainer) = ⬅Dual(Base.broadcasted,
+                $func, x.val, args...; kwargs...)
+                z = ⬅Tracker(z)
+                push!(x.Chainers, ∇ -> Chainer(∇))
+                push!(x.Childs, z.id)
+                push!(Tape, x)
+                return z
+            end
+         )
+
+
     elseif mode == :BroadcastedBinary
         return :(
             function Base.broadcasted(::typeof($func),
@@ -147,7 +161,7 @@ end
 @⬅Overload Binary Base.:^
 @⬅Overload BroadcastedUnary Base.:^
 
-@⬅Overload Unary Base.exp
+#@⬅Overload Unary Base.exp
 @⬅Overload BroadcastedUnary Base.exp
 
 @⬅Overload Unary Base.sin
