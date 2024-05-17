@@ -14,7 +14,7 @@ The library uses a special struct called "tensor" like pytorch. All of the manip
 A simple queue can be implemented. Using the above structure gives an implicit tape with topological order. When the queue has been emptied, all of the gradient will have been computed. At a higher level, there will be an array which contains the pointers to all of the parameters of the network. This array will be iterated such that all parameter tensors are accessed and their value arrays updated with a gradient step. 
 
 # pseudocode
-The overloaded operations operate in this way:
+The overloaded functions come in likeso pairs:
 ```cpp
 tensor foo(tensor x, tensor y){
     tensor z = // (...) 
@@ -23,10 +23,11 @@ tensor foo(tensor x, tensor y){
     return z;
 }
 
-tensor foo_back(tensor parent_x, tensor parent_y, tensor grad_child){
+tensor* foo_back(tensor grad_child, tensor parent_x, tensor parent_y){
     tensor grad_par_x = // (...);
     tensor grad_par_y = // (...);
-    return 
+    tensor* parent_grads = // (...);
+    return parent_grads;
 }
 ```
 
