@@ -6,3 +6,4 @@ struct tensor matmul(struct tensor x,
     // TODO;
     return;
 };
+
