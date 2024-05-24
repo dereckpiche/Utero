@@ -1,13 +1,4 @@
-#include <vector> 
-#include <cstdlib>
-#include <iostream>
-
-typedef struct tensor {
-    float* values; // reference to start of contiguous memory string
-    int size;
-    std::vector<int> shape;
-    std::vector<int> strides;
-} tensor;
+#include "utero.h"
 
 tensor talloc(std::vector<int> shape) { // tensor allocation
     std::cout << shape.size();
@@ -40,7 +31,20 @@ float access(tensor t, std::vector<int> indices){
 }
 
 void set(tensor t, float value, std::vector<int> indices){
-    // TODO;
+    t.values[get_index(t, indices)] = value;
+}
+
+int min(int a, int b){
+    if (a<b) return a;
+    return b;
+}
+
+void fill_diagonal(tensor t, float value){
+    if (t.shape.size()==2) {
+        for (int i=0; i < min(t.shape[0], t.shape[1]); i++){
+            set(t, value, {i,i});
+        }
+    }   
 }
 
 void print(tensor t){
@@ -58,9 +62,4 @@ void print(tensor t){
     }
 }
  
-int main() {
-    tensor t = talloc({7,4});
-    print(t);
-    return 0;
-}
 

@@ -1,8 +1,6 @@
-#include <numeric>
+#include "utero.h"
 
-struct tensor matmul(struct tensor x,
-    struct tensor y,
-    bool track = false); {
+tensor matmul(tensor x, tensor y); {
     // TODO;
     return;
 };

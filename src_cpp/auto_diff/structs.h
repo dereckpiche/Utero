@@ -1,3 +1,10 @@
+typedef struct tensor {
+    float* values; // reference to start of contiguous memory string
+    int size;
+    std::vector<int> shape;
+    std::vector<int> strides;
+} tensor;
+
 typedef struct var {
     tensor* val;
     tensor* grad;

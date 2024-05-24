@@ -1,6 +1,9 @@
+#include "utero.h"
 
-
-struct tensor sum(tensor x, struct tensor y, bool track = false) {
-    //TODO
-    return;
+tensor sum(tensor x, struct tensor y) {
+    tensor z = talloc(x.shape());
+    for (int i = 0; i < x.size(); i++){
+        z.values[i] = x.values[i] + y.values[i];
+    }
+    return z;
 };
