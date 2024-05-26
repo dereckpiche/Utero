@@ -6,10 +6,10 @@ typedef struct tensor {
 } tensor;
 
 typedef struct var {
-    tensor* val;
-    tensor* grad;
+    tensor val;
+    tensor grad;
     bool ignore; // ignore the tracking of this tensor?
-    var (*fback)(var**, var); // Pointer to the local backpropagation function
-    tensor** parents; // tensors used to create this tensor
-    int nb_parents; // nb of tensors used to create this tensor
+    tensor (*chains)(tensor, tensor); // array of (grad, parent_value) -> parent_grad functions
+    tensor* parents; // parents of this variable
+    int nb_parents;
 } var;
