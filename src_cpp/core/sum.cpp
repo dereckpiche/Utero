@@ -7,3 +7,4 @@ tensor sum(tensor x, tensor y) {
     }
     return z;
 };
+

@@ -1,12 +1,15 @@
 #include "utero.h"
 
-tensor talloc(std::vector<int> shape) { // tensor allocation
+std::vector<int> get_strides(std::vector<int> shape){
     std::vector<int> strides(shape.size(), 1); 
-    // precompute strides for faster access
-    // going in reverse because more consecutive accesses for rightmost indices
     for (int i = shape.size()-2; i >= 0; i--) {
         strides[i] = shape[i+1] * strides[i+1]; 
     }
+    return strides;
+};
+
+tensor talloc(std::vector<int> shape) { 
+    std::vector<int> strides = get_strides(shape);
     int size = strides[0] * shape[0];
     float* values = (float*)std::calloc(size, sizeof(float));
     tensor t = {values, size, shape, strides};
