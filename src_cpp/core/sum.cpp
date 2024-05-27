@@ -8,3 +8,7 @@ tensor sum(tensor x, tensor y) {
     return z;
 };
 
+var sum(var x, var y){
+    //TODO;
+}
+
